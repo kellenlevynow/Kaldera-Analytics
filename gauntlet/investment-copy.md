@@ -1,6 +1,6 @@
 # Investment section: drop-in copy
 
-Client-facing. Passes G8 (no dashes), G9 (Kaldera's own terms only) and G10 (nothing internal). Replaces section 06 of Appendix A. Section 03 also changes: "Up to six hours" replaces "Up to ten hours."
+Client-facing. Passes G8 (no dashes), G9 (Kaldera's own terms only) and G10 (nothing internal). Replaces section 06 of Appendix A. Section 03 also changes: "Up to six hours" replaces "Up to ten hours." Section 05 loses its "Alongside" block: hiring support is not part of this engagement, at the owner's request.
 
 ## 06. Investment
 
@@ -26,7 +26,6 @@ Fixed for the first 90 days and billed at the start of each month. The Month 1 a
 - Up to six hours a month with both advisors
 - A two-hour working session each month
 - Written recaps and email answers within two business days
-- Help choosing your Google Ads specialist
 - Month 1 account inspection: plan, tracking, every quote form and the phone path
 
 **Value line:**
