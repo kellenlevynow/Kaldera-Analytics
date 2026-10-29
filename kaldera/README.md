@@ -4,16 +4,16 @@ A sub-60-second microsite for Kaldera Analytics, a marketing and revenue systems
 
 Stack: Vite, TypeScript, Three.js, GSAP, modern CSS. No frameworks. Deploys to Cloudflare as static files from `dist/`.
 
-## Before launch: placeholders to fill
+## Site settings
 
-Everything the owner still has to supply lives in one file, `src/site.config.ts`:
+Everything site-specific lives in one file, `src/site.config.ts`:
 
-| Key | Current placeholder | Replace with |
-| --- | --- | --- |
-| `domain` | `kaldera.example` | the registered domain |
-| `url` | `https://kaldera.example` | `https://` plus the domain, no trailing slash |
-| `email` | `hello@kaldera.example` | the studio contact address |
-| `portfolioUrl` | `https://portfolio.example` | the principal's portfolio URL |
+| Key | Value |
+| --- | --- |
+| `domain` | `kaldera-analytics.com` |
+| `url` | `https://kaldera-analytics.com` |
+| `email` | `hello@kaldera-analytics.com` |
+| `portfolioUrl` | `https://kellenlevynow.github.io/portfolio/` |
 
 `index.html` reads these at build time (canonical URL, Open Graph tags, mailto link, portfolio link) and `src/main.ts` applies the email and portfolio link at runtime, so nothing else needs editing. After changing them, run `npm run build` again.
 
@@ -64,7 +64,7 @@ wrangler.jsonc             Workers static assets config (assets.directory ./dist
 
 1. In the Cloudflare dashboard open **Domain Registration > Register Domains**, search for the domain and complete the purchase. Cloudflare Registrar sells at cost and adds the zone to the account with DNS and proxying managed in place.
 2. If the domain already exists elsewhere, open **Domain Registration > Transfer Domains**, unlock the domain at the current registrar, request the auth code and follow the transfer flow (the zone must already be on Cloudflare DNS).
-3. Put the final domain into `src/site.config.ts` (`domain` and `url`).
+3. The domain in `src/site.config.ts` (`domain` and `url`) already matches: `kaldera-analytics.com`.
 
 ### 2. Hosting, option A: Cloudflare Pages with Git integration (recommended)
 
