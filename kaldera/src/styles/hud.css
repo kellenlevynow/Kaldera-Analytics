@@ -119,6 +119,14 @@
 
 .hud-cta {
   padding: 0.55rem 0.9rem;
+  white-space: nowrap;
+}
+
+/* The status line is decorative; it yields to the controls on laptop widths. */
+@media (max-width: 1280px) {
+  .hud-status {
+    display: none;
+  }
 }
 
 /* Bottom bar */

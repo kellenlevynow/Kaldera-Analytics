@@ -3,9 +3,9 @@
 // single place to edit the domain, contact address and portfolio link.
 export const site = {
   name: 'Kaldera Analytics',
-  tagline: 'Growth is an infrastructure problem.',
+  tagline: 'Marketing you can run a business on.',
   description:
-    'Kaldera Analytics is a marketing and revenue systems studio in Boise, Idaho. Demand, acquisition, conversion, automation, data and revenue operations designed as one connected structure.',
+    'Kaldera Analytics, Boise, Idaho. Marketing and revenue systems that help companies attract the right customers, convert more of them and make revenue repeatable.',
 
   // Production domain, registered on Cloudflare Registrar.
   domain: 'kaldera-analytics.com',
