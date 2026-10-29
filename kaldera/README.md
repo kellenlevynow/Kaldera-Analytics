@@ -1,8 +1,17 @@
 # Kaldera Analytics
 
-A sub-60-second microsite for Kaldera Analytics, a marketing and revenue systems studio in Boise, Idaho. A south-polar lunar crater, lit rim in permanent sunlight and a floor in permanent shadow, is the spatial framework: six infrastructure nodes on the rim map to Demand, Acquisition, Conversion, Automation, Data and Revenue operations, revealed by a scroll-driven camera traverse. The hero opens just outside the fractured crest, eye level with the rim blocks, looking across the bowl to the sunlit far wall with the Earth low in the sky.
+A sub-60-second microsite for Kaldera Analytics, a marketing and revenue systems studio in Boise, Idaho. A south-polar lunar crater, lit rim in permanent sunlight and a floor in permanent shadow, is the spatial framework: six installations on the rim mark the six parts of the system the copy describes (demand generation, paid acquisition, conversion, automation, analytics, revenue operations), revealed by a scroll-driven camera traverse. The scene is the visual identity; the copy stands on its own without it. The hero opens just outside the fractured crest, eye level with the rim blocks, looking across the bowl to the sunlit far wall with the Earth low in the sky.
 
 Stack: Vite, TypeScript, Three.js, GSAP, modern CSS. No frameworks. Deploys to Cloudflare as static files from `dist/`.
+
+## Copy and positioning
+
+The copy sells marketing expertise, judgment, execution and connected systems, not the lunar scene. Keep these rules when editing it.
+
+- Core claim: Kaldera builds and runs the marketing and revenue systems that help companies attract the right customers, convert more of them, and make revenue measurable and repeatable. Headline: "Marketing you can run a business on."
+- Hierarchy: the hero states the claim and names the six parts of the system. Each section is one part: the eyebrow names the service, the title states the idea in plain words, the paragraph explains how it works and what it produces, and the three spec rows read Includes (scope), Measures (the metrics it is judged by) and Feeds (the part it hands off to). The close asks for the visitor's growth problem and says what they get back.
+- Voice: plain, declarative, specific, composed. Outcomes before mechanics. Name the metric. No invented clients, results, guarantees or credentials. No generic agency language.
+- The scene, telemetry and coordinates are an aesthetic layer. No sentence may depend on a lunar reference to make sense.
 
 ## Site settings
 
