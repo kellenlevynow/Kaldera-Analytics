@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers static assets deployment for the Kaldera microsite.
+  // `npm run deploy` builds into dist/ and uploads it. Pages Git integration is
+  // the alternative path and needs no wrangler at all (see README).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kaldera-analytics",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

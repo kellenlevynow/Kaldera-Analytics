@@ -1,0 +1,305 @@
+/* Persistent HUD: top bar, bottom bar, index rail. Transparent over the scene. */
+.hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  height: var(--hud-h);
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.hud-top {
+  top: 0;
+}
+
+.hud-bottom {
+  bottom: 0;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  color: var(--ink);
+}
+
+.wordmark-name {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 1.45rem;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.wordmark-sub {
+  font-size: 0.55rem;
+  letter-spacing: 0.32em;
+  color: var(--ink-2);
+}
+
+.hud-status {
+  display: flex;
+  gap: 0.75rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.hud-status .hud-sep {
+  color: var(--ink-3);
+}
+
+.hud-status [data-scene-status] {
+  color: var(--ink);
+}
+
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.sys {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  color: var(--ink-3);
+}
+
+.sys-label {
+  color: var(--ink-2);
+}
+
+.sys-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sys-key {
+  margin-right: 0.3rem;
+}
+
+.sys-opt {
+  position: relative;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+  padding: 0.3rem 0.45rem;
+  color: var(--ink-3);
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  border: 1px solid transparent;
+  transition: color 0.2s linear, border-color 0.2s linear, background-color 0.2s linear;
+}
+
+.sys-opt:hover {
+  color: var(--ink);
+}
+
+.sys-opt[aria-pressed='true'] {
+  color: var(--ink);
+  border-color: var(--hair);
+}
+
+.hud-cta {
+  padding: 0.55rem 0.9rem;
+}
+
+/* Bottom bar */
+.telemetry {
+  display: flex;
+  gap: 1.75rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.tele {
+  display: inline-flex;
+  gap: 0.6rem;
+}
+
+.tele-key {
+  color: var(--ink-3);
+}
+
+.tele-val {
+  color: var(--ink);
+  min-width: 4.2em;
+}
+
+.active-node {
+  display: inline-flex;
+  gap: 0.75rem;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.traverse {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.traverse-bar {
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* Index rail */
+.rail {
+  position: fixed;
+  right: var(--gutter);
+  top: 50%;
+  z-index: 5;
+  transform: translateY(-50%);
+}
+
+.rail-list {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.rail-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  min-height: 1.5rem;
+  color: var(--ink-3);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+  transition: color 0.3s linear;
+}
+
+.rail-name {
+  opacity: 0;
+  transform: translateX(0.4rem);
+  transition: opacity 0.3s linear, transform 0.4s var(--ease-out);
+  white-space: nowrap;
+}
+
+.rail-tick {
+  display: block;
+  width: 0.9rem;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.4s var(--ease-out);
+}
+
+.rail-link:hover,
+.rail-link:focus-visible,
+.rail-link.is-active {
+  color: var(--ink);
+}
+
+.rail-link:hover .rail-name,
+.rail-link:focus-visible .rail-name,
+.rail-link.is-active .rail-name {
+  opacity: 1;
+  transform: none;
+}
+
+.rail-link.is-active .rail-tick {
+  width: 1.6rem;
+}
+
+@media (max-width: 900px) {
+  .hud-status {
+    display: none;
+  }
+  .sys-label {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --hud-h: 3.25rem;
+  }
+  .hud {
+    gap: 1rem;
+  }
+  .wordmark-sub {
+    display: none;
+  }
+  .hud-cta {
+    padding: 0.5rem 0.7rem;
+  }
+  /* SYS moves to the bottom bar on small screens. */
+  .sys {
+    position: fixed;
+    right: var(--gutter);
+    bottom: 0;
+    height: var(--hud-h);
+    gap: 0.75rem;
+  }
+  .sys-key {
+    display: none;
+  }
+  .sys-group {
+    gap: 0.2rem;
+  }
+  .sys-opt {
+    padding: 0.3rem 0.35rem;
+    font-size: 0.6rem;
+  }
+  .active-node {
+    display: none;
+  }
+  .telemetry {
+    gap: 1rem;
+  }
+  .tele:nth-child(n + 2) {
+    display: none;
+  }
+  .tele-val {
+    min-width: 0;
+  }
+  .rail {
+    right: 0.75rem;
+  }
+  .rail-name,
+  .rail-link:not(.is-active) .rail-num {
+    display: none;
+  }
+  .rail-list {
+    gap: 0.15rem;
+  }
+  .rail-link {
+    min-height: 1.5rem;
+    min-width: 1.5rem;
+    gap: 0.45rem;
+  }
+  .rail-tick {
+    width: 0.7rem;
+  }
+  .rail-link.is-active .rail-tick {
+    width: 1.2rem;
+  }
+}

@@ -1,0 +1,73 @@
+/* Degradation: reduced motion, no WebGL, no JS. */
+
+/* Reduced motion: no glide, instant or opacity-only reveals, idle animation off. */
+html[data-motion='reduced'] .line-inner,
+html[data-motion='reduced'] .fade {
+  transition: opacity 0.3s linear;
+}
+
+html[data-motion='reduced'] .js .reveal .line-inner,
+html[data-motion='reduced'].js .reveal .line-inner {
+  transform: none;
+  opacity: 0;
+}
+
+html[data-motion='reduced'].js .reveal.is-shown .line-inner {
+  opacity: 1;
+}
+
+html[data-motion='reduced'] .cue-line::after {
+  animation: none;
+  transform: translateY(80%);
+}
+
+html[data-motion='reduced'] .scene,
+html[data-motion='reduced'] .poster {
+  transition-duration: 0.4s;
+}
+
+html[data-motion='reduced'] .rail-tick,
+html[data-motion='reduced'] .rail-name,
+html[data-motion='reduced'] .link,
+html[data-motion='reduced'] .skip {
+  transition: none;
+}
+
+/* No WebGL: the poster stays, the status reads POSTER, the quality toggle is inert. */
+html.no-webgl .scene {
+  display: none;
+}
+
+html.no-webgl .sys-group[data-quality-group] {
+  opacity: 0.4;
+}
+
+/* No JS: everything is visible, nothing waits on a reveal. */
+html:not(.js) .scene,
+html:not(.js) .cue {
+  display: none;
+}
+
+/* ?og: clean capture for the social image. */
+html.og .hud,
+html.og .rail,
+html.og .cue,
+html.og .skip {
+  display: none;
+}
+
+@media print {
+  .hud,
+  .rail,
+  .poster,
+  .scene,
+  .vignette,
+  .cue {
+    display: none;
+  }
+  html,
+  body {
+    background: #fff;
+    color: #000;
+  }
+}
