@@ -6,8 +6,8 @@ import { starFragment, starVertex } from './shaders';
 import { sunDir } from './terrain';
 
 const DEG = Math.PI / 180;
-export const EARTH_AZIMUTH = 80;
-export const EARTH_ELEVATION = 4.6;
+export const EARTH_AZIMUTH = 136;
+export const EARTH_ELEVATION = 8.5;
 export const earthDir = new Vector3(
   Math.cos(EARTH_AZIMUTH * DEG) * Math.cos(EARTH_ELEVATION * DEG),
   Math.sin(EARTH_ELEVATION * DEG),
@@ -118,19 +118,36 @@ export function createSky(starCount: number, dpr: number): Sky {
   const positions = new Float32Array(starCount * 3);
   const sizes = new Float32Array(starCount);
   const bright = new Float32Array(starCount);
+  // The galactic band: a great circle tilted across the sky, holding faint,
+  // dense stars so the Milky Way reads without a painted texture.
+  const bandNormal = new Vector3(0.62, 0.55, -0.56).normalize();
+  const bandU = new Vector3(0, 1, 0).cross(bandNormal).normalize();
+  const bandV = bandNormal.clone().cross(bandU).normalize();
+  const dir = new Vector3();
   for (let i = 0; i < starCount; i++) {
-    // Uniform on the sphere, kept above the horizon.
-    const u = rand();
-    const v = rand();
-    const theta = u * Math.PI * 2;
-    const y = 0.015 + (1 - 0.015) * Math.pow(v, 0.85);
-    const s = Math.sqrt(Math.max(0, 1 - y * y));
-    positions[i * 3] = Math.cos(theta) * s * SKY_RADIUS;
-    positions[i * 3 + 1] = y * SKY_RADIUS;
-    positions[i * 3 + 2] = Math.sin(theta) * s * SKY_RADIUS;
-    const m = Math.pow(rand(), 2.6); // most stars are faint
-    sizes[i] = 1.0 + m * 1.6;
-    bright[i] = 0.25 + m * 0.75;
+    const inBand = i >= Math.floor(starCount * 0.45);
+    if (inBand) {
+      // Along the band uniformly, across it a narrow Gaussian.
+      const along = rand() * Math.PI * 2;
+      const across = (rand() + rand() + rand() - 1.5) * 0.11;
+      dir.copy(bandU).multiplyScalar(Math.cos(along)).addScaledVector(bandV, Math.sin(along)).addScaledVector(bandNormal, across).normalize();
+      if (dir.y < 0.02) {
+        dir.y = 0.02 + rand() * 0.05;
+        dir.normalize();
+      }
+    } else {
+      // Uniform on the sphere, kept above the horizon.
+      const theta = rand() * Math.PI * 2;
+      const y = 0.015 + (1 - 0.015) * Math.pow(rand(), 0.85);
+      const s = Math.sqrt(Math.max(0, 1 - y * y));
+      dir.set(Math.cos(theta) * s, y, Math.sin(theta) * s);
+    }
+    positions[i * 3] = dir.x * SKY_RADIUS;
+    positions[i * 3 + 1] = dir.y * SKY_RADIUS;
+    positions[i * 3 + 2] = dir.z * SKY_RADIUS;
+    const m = Math.pow(rand(), inBand ? 4.0 : 2.6); // most stars are faint, band stars fainter still
+    sizes[i] = (inBand ? 0.8 : 1.0) + m * 1.6;
+    bright[i] = (inBand ? 0.14 : 0.25) + m * 0.75;
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(positions, 3));
@@ -156,8 +173,9 @@ export function createSky(starCount: number, dpr: number): Sky {
 
   const earthMaterial = new SpriteMaterial({ map: earthTexture(), transparent: true, depthWrite: false, depthTest: true, fog: false });
   const earth = new Sprite(earthMaterial);
-  // Earth subtends about 1.9 degrees from the Moon; the disc is 200 of 256 texels.
-  earth.scale.setScalar(BODY_DISTANCE * Math.tan(0.95 * DEG) * 2 * (256 / 200));
+  // Earth subtends about 1.9 degrees from the Moon; the disc is 200 of 256
+  // texels. Drawn a third larger than life so the crescent reads at phone sizes.
+  earth.scale.setScalar(BODY_DISTANCE * Math.tan(1.25 * DEG) * 2 * (256 / 200));
   earth.renderOrder = -6;
 
   const tmp = new Vector3();
