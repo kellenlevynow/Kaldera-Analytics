@@ -1,0 +1,5 @@
+
+# Mira Home gauntlet: internal pricing files stay out of this public repo
+gauntlet/*
+!gauntlet/investment-copy.md
+!gauntlet/model.py
