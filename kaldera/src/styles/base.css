@@ -1,0 +1,304 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  scrollbar-color: var(--ink-3) var(--bg);
+}
+
+html[data-motion='reduced'] {
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ol,
+ul,
+figure {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  z-index: 50;
+  transform: translate(-50%, -300%);
+  padding: 0.55rem 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--ink);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  transition: transform 0.2s var(--ease-out);
+}
+
+.skip:focus-visible {
+  transform: translate(-50%, 0);
+  outline-offset: 2px;
+}
+
+/* Type system */
+.eyebrow,
+.label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.eyebrow .idx {
+  color: var(--ink);
+  margin-right: 0.6em;
+}
+
+.display {
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.display-h1 {
+  font-size: clamp(2.2rem, 5.6vw, 5.2rem);
+  letter-spacing: 0.04em;
+  line-height: 1.02;
+}
+
+.display-h2 {
+  font-size: clamp(1.5rem, 3.2vw, 2.6rem);
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+}
+
+.dek {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+.link {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: var(--track);
+  font-weight: 500;
+  color: var(--ink);
+  padding-bottom: 0.15em;
+  background-image: linear-gradient(var(--ink), var(--ink));
+  background-repeat: no-repeat;
+  background-size: 0 1px;
+  background-position: 0 100%;
+  transition: background-size 0.4s var(--ease-out);
+}
+
+.link:hover,
+.link:focus-visible {
+  background-size: 100% 1px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--ink);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--ink);
+  background: transparent;
+  transition: background-color 0.2s linear, color 0.2s linear;
+}
+
+.btn:hover,
+.btn:focus-visible,
+.btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* Masked line reveals. The .js class is set inline in <head> before first paint. */
+.line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+  margin-bottom: -0.06em;
+}
+
+.line-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+.js .reveal .line-inner,
+.js .reveal .fade {
+  opacity: 0;
+}
+
+.js .reveal .line-inner {
+  opacity: 1;
+  transform: translate3d(0, 110%, 0);
+}
+
+.js .reveal.is-shown .line-inner {
+  transform: none;
+}
+
+.js .reveal.is-shown .fade {
+  opacity: 1;
+}
+
+/* Spec lists: three uppercase rows with hairlines between them. */
+.spec {
+  display: grid;
+  margin-top: 2rem;
+  max-width: var(--measure);
+  border-top: 1px solid var(--hair);
+}
+
+.spec-row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.spec-row dt {
+  color: var(--ink-2);
+}
+
+.spec-row dd {
+  color: var(--ink);
+}
+
+/* Layers */
+.poster {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  transition: opacity 1.8s linear;
+}
+
+.poster-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.has-scene .poster {
+  opacity: 0;
+}
+
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.4s linear;
+}
+
+.scene.is-online {
+  opacity: 1;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse 78% 68% at 50% 50%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.62) 100%);
+}
+
+main {
+  position: relative;
+  z-index: 3;
+  /* Panel scrims extend past the viewport edge; clip them so the layout viewport never widens. */
+  overflow-x: clip;
+}
