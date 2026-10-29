@@ -1,43 +1,23 @@
-// Scene assembly: renderer, time-sliced terrain bake, sky, network, camera rig,
-// render loop in gsap.ticker, quality tiers and reduced-motion behaviour.
+// Scene assembly: renderer, worker-baked terrain, boulder field, sky, network,
+// camera rig, render loop in gsap.ticker, quality tiers and reduced-motion
+// behaviour.
 import gsap from 'gsap';
-import { DataTexture, FogExp2, Mesh, NoToneMapping, PerspectiveCamera, RGBAFormat, Scene, ShaderMaterial, SRGBColorSpace, UnsignedByteType, Vector2, Vector3, WebGLRenderer } from 'three';
-import type { QualityTier, SceneController, SceneDiagnostics, SceneOptions } from './types';
-import { FAR_HALF, NEAR_HALF, bakeFar, buildTerrain, sunDir, sunRotation, type BakeGrid, type TerrainBuild } from './terrain';
+import { DataTexture, Mesh, NoToneMapping, PerspectiveCamera, RGBAFormat, Scene, ShaderMaterial, SRGBColorSpace, UnsignedByteType, Vector2, Vector3, WebGLRenderer } from 'three';
+import type { LightUniforms, QualityTier, SceneController, SceneDiagnostics, SceneOptions } from './types';
+import { CRATER_R, FAR_HALF, NEAR_HALF, makeBakeGrid, makeTerrainBuild, sunDir, sunRotation, type BakeGrid, type TerrainBuild } from './terrain';
 import { terrainFragment, terrainVertex } from './shaders';
-import { createSky } from './sky';
+import { createSky, earthDir } from './sky';
 import { buildNetwork } from './network';
+import { buildRocks, type RockField } from './rocks';
 import { CameraRig } from './camera';
+import { createBaker } from './bake';
 import { FrameMonitor, configFor, detectTier, lowerTier } from './quality';
 
-const FOG_DENSITY = 0.021;
-const BAKE_BUDGET_MS = 7;
-const CONTOUR_BASE = 0.14;
-const CONTOUR_DATA = 0.62;
-
-// Drives a generator across animation frames within a per-frame time budget.
-function runSliced<T>(gen: Generator<number, T, void>, budgetMs: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const step = () => {
-      const start = performance.now();
-      try {
-        for (;;) {
-          const r = gen.next();
-          if (r.done) {
-            resolve(r.value);
-            return;
-          }
-          if (performance.now() - start > budgetMs) break;
-        }
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-        return;
-      }
-      window.requestAnimationFrame(step);
-    };
-    window.requestAnimationFrame(step);
-  });
-}
+// Distance lift, not fog: see distanceFade in shaders.ts.
+const FADE_DENSITY = 0.0105;
+const EXPOSURE = 0.78;
+const CONTOUR_BASE = 0.08;
+const CONTOUR_DATA = 0.55;
 
 export async function createScene(options: SceneOptions): Promise<SceneController> {
   const { canvas } = options;
@@ -52,42 +32,52 @@ export async function createScene(options: SceneOptions): Promise<SceneControlle
   renderer.setClearColor(0x000000, 1);
 
   const scene = new Scene();
-  scene.fog = new FogExp2(0x000000, FOG_DENSITY);
   const camera = new PerspectiveCamera(42, 1, 0.05, 700);
 
-  const blank = new DataTexture(new Uint8Array([128, 128, 255, 255]), 1, 1, RGBAFormat, UnsignedByteType);
+  const blank = new DataTexture(new Uint8Array([128, 128, 255, 128]), 1, 1, RGBAFormat, UnsignedByteType);
   blank.needsUpdate = true;
+  // Shared by every lit material so exposure and light directions stay in step.
+  const light: LightUniforms = {
+    uSunDir: { value: sunDir.clone() },
+    uEarthDir: { value: earthDir.clone() },
+    uExposure: { value: EXPOSURE },
+    uEarthshine: { value: new Vector3(0.07, 0.074, 0.09) },
+    uFogDensity: { value: FADE_DENSITY }
+  };
   const uniforms = {
+    ...light,
     uNear: { value: blank as DataTexture },
     uFar: { value: blank as DataTexture },
     uNearHalf: { value: NEAR_HALF },
     uFarHalf: { value: FAR_HALF },
     uFarReady: { value: 0 },
     uSunRot: { value: new Vector2(sunRotation[0], sunRotation[1]) },
-    uSunDir: { value: sunDir.clone() },
-    uExposure: { value: 1.55 },
-    uEarthshine: { value: new Vector3(0.011, 0.012, 0.015) },
     uContour: { value: CONTOUR_BASE },
     uContourSpacing: { value: 0.2 },
     uIce: { value: 1.0 },
     uTime: { value: 0 },
-    uFogDensity: { value: FOG_DENSITY }
+    uDetail: { value: config.detail },
+    uCraterR: { value: CRATER_R }
   };
   const terrainMaterial = new ShaderMaterial({ uniforms, vertexShader: terrainVertex, fragmentShader: terrainFragment });
 
-  let build: TerrainBuild = await runSliced(buildTerrain(config.terrain), BAKE_BUDGET_MS);
+  const baker = createBaker();
+  let build: TerrainBuild = makeTerrainBuild(await baker.grid(config.terrain));
   uniforms.uNear.value = build.near.texture;
   let far: BakeGrid | null = null;
   const terrain = new Mesh(build.geometry, terrainMaterial);
   terrain.frustumCulled = false;
   scene.add(terrain);
 
-  const network = buildNetwork(build.sampler, config.dpr);
+  const network = buildNetwork(build.sampler, config.dpr, light);
   scene.add(network.group);
   const sky = createSky(config.stars, config.dpr);
   scene.add(sky.stars, sky.sun, sky.earth);
 
   const rig = new CameraRig(camera, build.sampler, network.nodes);
+  const clearance = rig.clearanceFn();
+  let rocks: RockField = buildRocks(build.sampler, { count: config.rocks, clearance, uniforms: light });
+  scene.add(rocks.mesh);
 
   let progress = options.initialProgress ?? 0;
   let active = options.initialActive ?? 0;
@@ -193,8 +183,9 @@ export async function createScene(options: SceneOptions): Promise<SceneControlle
     size();
     monitor.reset();
     options.onTier(tier, staticMode);
+    uniforms.uDetail.value = config.detail;
     try {
-      const nextBuild = await runSliced(buildTerrain(config.terrain), BAKE_BUDGET_MS);
+      const nextBuild = makeTerrainBuild(await baker.grid(config.terrain));
       const old = terrain.geometry;
       const oldTexture = build.near.texture;
       terrain.geometry = nextBuild.geometry;
@@ -202,6 +193,12 @@ export async function createScene(options: SceneOptions): Promise<SceneControlle
       old.dispose();
       oldTexture.dispose();
       build = nextBuild;
+      if (rocks.count !== config.rocks) {
+        scene.remove(rocks.mesh);
+        rocks.dispose();
+        rocks = buildRocks(build.sampler, { count: config.rocks, clearance, uniforms: light });
+        scene.add(rocks.mesh);
+      }
     } finally {
       rebuilding = false;
       if (!ticking) requestRender();
@@ -240,7 +237,8 @@ export async function createScene(options: SceneOptions): Promise<SceneControlle
   options.onOnline();
   options.onTier(tier, staticMode);
   applyMode();
-  void runSliced(bakeFar(config.terrain.far), BAKE_BUDGET_MS).then((grid) => {
+  void baker.far(config.terrain.far).then((data) => {
+    const grid = makeBakeGrid(data);
     far = grid;
     uniforms.uFar.value = grid.texture;
     uniforms.uFarReady.value = 1;
@@ -276,7 +274,9 @@ export async function createScene(options: SceneOptions): Promise<SceneControlle
         pixelRatio: renderer.getPixelRatio(),
         avgFrameMs: Math.round(monitor.average * 100) / 100,
         online,
-        vertices: build.vertexCount
+        vertices: build.vertexCount,
+        rocks: rocks.count,
+        threaded: baker.threaded
       };
     },
     dispose() {
@@ -286,7 +286,9 @@ export async function createScene(options: SceneOptions): Promise<SceneControlle
       window.removeEventListener('pointermove', onPointer);
       unsubMotion();
       unsubQuality();
+      baker.dispose();
       network.dispose();
+      rocks.dispose();
       sky.dispose();
       build.near.texture.dispose();
       far?.texture.dispose();

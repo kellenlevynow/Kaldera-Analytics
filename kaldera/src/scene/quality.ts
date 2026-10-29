@@ -7,6 +7,9 @@ export interface TierConfig {
   terrain: TerrainResolution;
   stars: number;
   antialias: boolean;
+  rocks: number;
+  // Strength of the per-fragment relief layers (0 to 1).
+  detail: number;
 }
 
 interface NavigatorHints {
@@ -28,13 +31,13 @@ export function configFor(tier: QualityTier, deviceDpr: number): TierConfig {
   switch (tier) {
     case 'high': {
       const dpr = Math.min(deviceDpr, 2);
-      return { tier, dpr, terrain: { angular: 640, radial: 156, near: 768, far: 256 }, stars: 2000, antialias: dpr < 2 };
+      return { tier, dpr, terrain: { angular: 1024, radial: 204, near: 1024, far: 320 }, stars: 2600, antialias: dpr < 2, rocks: 1600, detail: 1 };
     }
     case 'medium':
-      return { tier, dpr: Math.min(deviceDpr, 1.5), terrain: { angular: 448, radial: 118, near: 512, far: 256 }, stars: 1200, antialias: false };
+      return { tier, dpr: Math.min(deviceDpr, 1.5), terrain: { angular: 720, radial: 168, near: 768, far: 256 }, stars: 1600, antialias: false, rocks: 1000, detail: 1 };
     case 'low':
     default:
-      return { tier: 'low', dpr: 1, terrain: { angular: 288, radial: 84, near: 384, far: 192 }, stars: 800, antialias: false };
+      return { tier: 'low', dpr: 1, terrain: { angular: 440, radial: 116, near: 512, far: 192 }, stars: 1000, antialias: false, rocks: 500, detail: 0.6 };
   }
 }
 

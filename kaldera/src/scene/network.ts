@@ -9,6 +9,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mulberry32 } from './noise';
 import { beaconFragment, beaconVertex, linkFragment, linkVertex, satelliteFragment, satelliteVertex, structureFragment, structureVertex } from './shaders';
 import { FLOOR_R, heightAt, rimRadiusAt, sunDir, type TerrainSampler } from './terrain';
+import type { LightUniforms } from './types';
 
 export type NodeSide = 'left' | 'right';
 
@@ -322,7 +323,7 @@ function ringGeometry(spec: RingSpec, segments = 160): BufferGeometry {
   return g;
 }
 
-export function buildNetwork(sampler: TerrainSampler, dpr: number): Network {
+export function buildNetwork(sampler: TerrainSampler, dpr: number, light: LightUniforms): Network {
   const group = new Group();
   const nodes = anchorNodes();
   const builder = new Builder();
@@ -340,12 +341,7 @@ export function buildNetwork(sampler: TerrainSampler, dpr: number): Network {
   if (!merged) throw new Error('Structure merge failed');
   merged.computeBoundingSphere();
   const structureMaterial = new ShaderMaterial({
-    uniforms: {
-      uSunDir: { value: sunDir.clone() },
-      uExposure: { value: 1.55 },
-      uEarthshine: { value: new Vector3(0.011, 0.012, 0.015) },
-      uFogDensity: { value: 0.021 }
-    },
+    uniforms: { ...light, uGrain: { value: 0 } },
     vertexShader: structureVertex,
     fragmentShader: structureFragment
   });
@@ -417,7 +413,7 @@ export function buildNetwork(sampler: TerrainSampler, dpr: number): Network {
   linkGeometry.setAttribute('position', new BufferAttribute(new Float32Array(linkPositions), 3));
   linkGeometry.setAttribute('aT', new BufferAttribute(new Float32Array(linkT), 1));
   const linkMaterial = new ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uBase: { value: 0.22 }, uPulse: { value: 0.75 }, uFogDensity: { value: 0.021 } },
+    uniforms: { uTime: { value: 0 }, uBase: { value: 0.22 }, uPulse: { value: 0.75 }, uFogDensity: light.uFogDensity },
     vertexShader: linkVertex,
     fragmentShader: linkFragment,
     transparent: true,

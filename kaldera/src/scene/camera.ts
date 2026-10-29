@@ -10,6 +10,7 @@ const DEG = Math.PI / 180;
 const RAD = 180 / Math.PI;
 const BASE_FOV = 42;
 const PARALLAX_DEG = 1.2;
+const CLEARANCE = 0.24; // km, minimum eye height above the terrain
 
 export interface Waypoint {
   position: Vector3;
@@ -29,15 +30,21 @@ export function buildWaypoints(sampler: TerrainSampler, nodes: NodeAnchor[], por
   const lateral = 0.62 * (1 - 0.72 * portrait);
   const lift = 0.12 - 0.3 * portrait;
 
-  // 00 Hero: high oblique from the sun side, crater filling the right of the frame.
+  // 00 Hero: just outside the crest on the sun side, eye a little above the
+  // rim blocks, looking across the bowl to the lit far wall and the highlands
+  // beyond. The horizon sits in the upper quarter; the crater fills the right
+  // of the frame, the foreground crest runs under the headline.
   {
-    const position = polar(250, 21.5, 6.0);
-    const look = new Vector3(0, -0.6, 0);
+    const angle = 300;
+    const crest = rimHeightAt(angle * DEG);
+    const radius = rimRadiusAt(angle * DEG) + 0.85;
+    const ground = sampler.heightAt(Math.cos(angle * DEG) * radius, Math.sin(angle * DEG) * radius);
+    const position = polar(angle, radius, Math.max(ground + 0.3, crest + 0.38));
+    const look = new Vector3(0, -2.6, 0);
     const forward = look.clone().sub(position).setY(0).normalize();
     const right = forward.clone().cross(up).normalize();
-    // Look well past the centre so the horizon sits in the upper third, crater low right,
-    // and the lit far wall clears the headline.
-    look.addScaledVector(right, -7.4 * (1 - 0.8 * portrait)).addScaledVector(forward, 29.0 - 6.0 * portrait);
+    look.addScaledVector(right, 3.5 * (1 - 0.8 * portrait)).addScaledVector(forward, 12 - 5.0 * portrait);
+    look.y -= 0.9 * portrait;
     points.push({ position, look });
   }
 
@@ -140,6 +147,9 @@ export class CameraRig {
     const t = Math.min(1, Math.max(0, this.progress));
     this.path.getPoint(t, this.position);
     this.lookPath.getPoint(t, this.look);
+    // The spline may dip between waypoints; keep the eye above the rim rocks.
+    const ground = this.sampler.heightAt(this.position.x, this.position.z);
+    if (this.position.y < ground + CLEARANCE) this.position.y = ground + CLEARANCE;
     this.camera.position.copy(this.position);
     this.camera.up.set(0, 1, 0);
     this.camera.lookAt(this.look);
@@ -147,6 +157,33 @@ export class CameraRig {
       this.camera.rotateY(-this.parallax.x * PARALLAX_DEG * DEG);
       this.camera.rotateX(-this.parallax.y * PARALLAX_DEG * DEG);
     }
+  }
+
+  // Horizontal distance from (x, z) to the camera path, sampled finely. Used
+  // to keep boulders out of the camera's way.
+  clearanceFn(samples = 600): (x: number, z: number, top: number) => number {
+    const pts: number[] = [];
+    const p = new Vector3();
+    for (let i = 0; i <= samples; i++) {
+      this.path.getPoint(i / samples, p);
+      const ground = this.sampler.heightAt(p.x, p.z);
+      pts.push(p.x, Math.max(p.y, ground + CLEARANCE), p.z);
+    }
+    // Path points well above the rock's top do not count: the eye passes over it.
+    return (x, z, top) => {
+      let best = Infinity;
+      for (let i = 0; i < pts.length; i += 3) {
+        const dx = (pts[i] ?? 0) - x;
+        const dz = (pts[i + 2] ?? 0) - z;
+        const d = dx * dx + dz * dz;
+        if (d >= best) continue;
+        const dy = (pts[i + 1] ?? 0) - top;
+        // Within 0.15 km of the eye height the rock is in the way; higher up it needs less room.
+        const d2 = dy > 0.15 ? d * (1 + (dy - 0.15) * 6) : d;
+        if (d2 < best) best = d2;
+      }
+      return Math.sqrt(best);
+    };
   }
 
   telemetry(): Telemetry {

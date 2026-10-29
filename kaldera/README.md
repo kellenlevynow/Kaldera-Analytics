@@ -1,6 +1,6 @@
 # Kaldera Analytics
 
-A sub-60-second microsite for Kaldera Analytics, a marketing and revenue systems studio in Boise, Idaho. A south-polar lunar crater, lit rim in permanent sunlight and a floor in permanent shadow, is the spatial framework: six infrastructure nodes on the rim map to Demand, Acquisition, Conversion, Automation, Data and Revenue operations, revealed by a scroll-driven camera traverse.
+A sub-60-second microsite for Kaldera Analytics, a marketing and revenue systems studio in Boise, Idaho. A south-polar lunar crater, lit rim in permanent sunlight and a floor in permanent shadow, is the spatial framework: six infrastructure nodes on the rim map to Demand, Acquisition, Conversion, Automation, Data and Revenue operations, revealed by a scroll-driven camera traverse. The hero opens just outside the fractured crest, eye level with the rim blocks, looking across the bowl to the sunlit far wall with the Earth low in the sky.
 
 Stack: Vite, TypeScript, Three.js, GSAP, modern CSS. No frameworks. Deploys to Cloudflare as static files from `dist/`.
 
@@ -45,18 +45,21 @@ src/main.ts                HUD wiring, reveals, scroll progress, lazy scene impo
 src/site.config.ts         domain, email, coordinates (placeholders flagged)
 src/styles/                tokens, base, hud, sections, fallback
 src/ui/                    hud, reveal (GSAP), motion (preferences)
-src/scene/                 index, terrain, shaders, sky, network, camera, noise, quality
+src/scene/                 index, heightfield, terrain, bake, bake.worker, rocks, shaders, sky, network, camera, noise, quality
 wrangler.jsonc             Workers static assets config (assets.directory ./dist)
 ```
 
 ## How it is built
 
 - The hero text renders immediately over an inline SVG contour poster. There is no preloader gate. The Three.js chunk is imported after first paint; the canvas fades in when its first frame is ready and the HUD status flips from POSTER to SCENE ONLINE. The poster doubles as the no-WebGL fallback.
-- The crater is an analytic heightfield. Normals and grazing-sun shadows (7 degree sun) are baked once on the CPU into two sun-aligned data textures with a single sweep per row, spread across animation frames so the hero intro stays smooth. The mesh is a polar grid with its vertex budget concentrated around the rim.
-- Eleven draw calls at most: terrain, merged structures, beacons, rim link (with the reserve cable), two orbital rings, satellites, uplink, stars, Sun, Earth.
+- The crater is an analytic heightfield (`src/scene/heightfield.ts`, pure math, no three.js): a 21 km bowl with a ridged, block-strewn crest, terraced inner walls with debris chutes, a deterministic crater population at four scales on every surface, hummocky ejecta, highland massifs on the horizon and the Moon's curvature. Installations sit on levelled pads where the fine relief is suppressed.
+- Normals, grazing-sun shadows (12 degree sun, floor still in permanent shadow) and a relief channel are baked into two sun-aligned data textures with a single sweep per row. The bake and the mesh grid run in a Web Worker (`bake.worker.ts`), so the main thread never stalls; browsers without workers fall back to the time-sliced generator. The mesh is a polar grid with half-step twisted rings and its vertex budget concentrated around the rim and the camera path.
+- Below the bake resolution the terrain shader adds analytic relief per fragment: two crater scales, boulders, fractured slabs on the crest and regolith grain, each with an exact gradient, faded by distance and view angle. Lighting is a Lambert and Lommel-Seeliger mix with an opposition surge, bounce from the blurred lit bake, directional earthshine and a filmic tonemap. Beyond the bakes the mesh facets shade from their geometric normal.
+- A boulder field (`rocks.ts`) scatters noise-displaced, plane-cut icosahedra along the crest and the upper walls in one merged flat-shaded mesh, half buried, carrying the baked shade of their ground, kept clear of the camera path and the installation pads.
+- Twelve draw calls at most: terrain, boulders, merged structures, beacons, rim link (with the reserve cable), two orbital rings, satellites, uplink, stars, Sun, Earth.
 - Native scroll drives a damped camera (frame-rate independent exponential smoothing) along a centripetal Catmull-Rom path through eight waypoints, with a separate look-at spline, a wider field of view in portrait, and a small pointer parallax on desktop.
 - `prefers-reduced-motion` or the Motion toggle: the camera cuts between waypoints as sections activate, the scene renders on demand only, idle animation stops, reveals are opacity only.
-- Quality tiers: high (DPR up to 2, MSAA under DPR 2), medium (DPR 1.5, default for coarse pointers, low memory or few cores), low (DPR 1). The first 90 frames are timed; above 20 ms average the tier drops, above 40 ms the scene switches to render-on-scroll.
+- Quality tiers: high (DPR up to 2, MSAA under DPR 2, 1024 by 1024 near bake, 1600 boulders), medium (DPR 1.5, default for coarse pointers, low memory or few cores, 768 bake, 1000 boulders), low (DPR 1, 512 bake, 500 boulders, reduced shader relief). The first 90 frames are timed; above 20 ms average the tier drops, above 40 ms the scene switches to render-on-scroll.
 
 ## Deploy to Cloudflare
 

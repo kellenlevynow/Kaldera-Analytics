@@ -74,3 +74,30 @@ export function ridged2(x: number, y: number, octaves: number): number {
   }
   return sum;
 }
+
+// Cellular (Worley) noise: distance to the nearest of one jittered feature
+// point per cell, in [0, ~1.4]. Returns the distance and the cell hash of the
+// nearest point so callers can derive per-block attributes.
+export function worley2(x: number, y: number): { f1: number; id: number } {
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  let f1 = 8;
+  let id = 0;
+  for (let j = -1; j <= 1; j++) {
+    for (let i = -1; i <= 1; i++) {
+      const cx = x0 + i;
+      const cy = y0 + j;
+      const h = hash2(cx, cy);
+      const px = cx + hash2(cx * 3 + 1, cy * 5 + 7);
+      const py = cy + hash2(cx * 7 + 3, cy * 11 + 1);
+      const dx = px - x;
+      const dy = py - y;
+      const d = dx * dx + dy * dy;
+      if (d < f1) {
+        f1 = d;
+        id = h;
+      }
+    }
+  }
+  return { f1: Math.sqrt(f1), id };
+}
