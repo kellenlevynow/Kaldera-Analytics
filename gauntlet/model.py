@@ -6,7 +6,7 @@ OUT="/home/user/Kaldera-Analytics/gauntlet/"
 K=dict(K1=0.5,K2=60,K3=None,K4=3,K5=0.20,K6="proposals.kaldera-analytics.com",K7=None,K8=None,K9=False,K10="Mid-November 2026",K11=None)
 F15_MONTH=7387.0
 SE_RATE=0.153; SE_BASE=0.9235
-STEADY_HOURS=18; M1_HOURS=26   # advisor-hours modeled per client
+STEADY_HOURS=12; M1_HOURS=19   # advisor-hours modeled per client
 HOURS_90=M1_HOURS+2*STEADY_HOURS  # 62
 
 def per_advisor_net(monthly_fee, inspection_fee=0, discount=0.0):
@@ -18,13 +18,13 @@ def per_advisor_net(monthly_fee, inspection_fee=0, discount=0.0):
 
 # ---------- candidate ----------
 LEVERS=dict(
-  fee=[4000+250*i for i in range(25)],
-  hours=[6,8,10,12], hours_def=["joint","advisor"],
+  fee=[4000+250*i for i in range(7)],
+  hours=[4,5,6,8], hours_def=["joint","advisor"],
   response=[1,2], billing=["monthly","prepaid3"], discount=[0,0.03,0.05,0.07],
   inspection=[0,1500,2500,3500,5000], rescope=[False,True], hiring=[True,False],
   value_line=["covers","none"])
-BASE=dict(fee=6000,hours=10,hours_def="joint",response=2,billing="monthly",discount=0,
-          inspection=0,rescope=False,hiring=True,value_line="covers")
+BASE=dict(fee=5000,hours=6,hours_def="joint",response=2,billing="monthly",discount=0,
+          inspection=1500,rescope=True,hiring=True,value_line="covers")
 
 def advisor_hours_sold(c): return c["hours"]*(2 if c["hours_def"]=="joint" else 1)
 def rev90(c): return c["fee"]*3*(1-(c["discount"] if c["billing"]=="prepaid3" else 0))+c["inspection"]
@@ -51,7 +51,7 @@ def objections(c):
     r.append((3,c["hiring"],"Different jobs. The specialist runs the accounts every day. We help you hire and onboard the right one, then become their sounding board, so the first months of a new hire are not spent learning alone." if c["hiring"] else "Candidate excludes hiring support, so the fee and the hire are unconnected."))
     r.append((4,True,"The first 90 days are one plan, inspect, treat, protect, timed to be ready before the spring season. Month to month breaks that plan. At day 90 we agree terms that fit what you have learned."))
     r.append((5,True,"An agency sells hours of execution and is paid more when you spend more. Your team keeps the accounts, your specialist runs them, and our advice has no stake in the spend. That is what keeps the advice honest."))
-    if c["fee"]>=5500:
+    if c["fee"]>=4750:
         r.append((6,True,"We can scope smaller, fewer advisory hours or one advisor in the sessions, and the price follows. We would not take the full scope at that price, because it would mean less preparation for each session."))
     else:
         r.append((6,True,"Already near that price; the answer is the scope list on the page."))
@@ -65,21 +65,21 @@ def score(c):
     # --- Client acceptance (E1,E2)
     a=7.0
     r90=rev90(c)
-    if r90>18000: a-=(r90-18000)/1000*0.35      # E2 judges the 90-day total against F11
-    else: a+=min((18000-r90)/1000*0.2,1.0)
-    if c["fee"]<6000: a+=0.3                     # E1 sells a lower monthly headline upward
-    if c["fee"]>6000: a-=0.3
+    if r90>16500: a-=(r90-16500)/1000*0.35      # E2 judges the 90-day total against F11
+    else: a+=min((16500-r90)/1000*0.2,1.0)
+    if c["fee"]<5000: a+=0.3                     # E1 sells a lower monthly headline upward
+    if c["fee"]>5000: a-=0.3
     if c["response"]==1: a+=0.3
     if c["inspection"]>0: a+=0.2                 # a priced Month 1 deliverable is easy to explain
     if c["rescope"]: a-=0.2
     if c["billing"]=="prepaid3": a-=1.0
     if not c["hiring"]: a-=0.5
-    if c["hours"]<8: a-=0.5
+    if c["hours"]<5: a-=0.5
     if c["hours_def"]=="advisor": a-=0.3
     if c["value_line"]=="none": a-=0.3
     a-=fails
     s["acceptance"]=a
-    why["acceptance"]=f"E1/E2: 90-day total ${rev90(c):,.0f} vs $18,000 in F11, headline ${c['fee']:,}; {'1-day email helps E1 (F3 phone hours, F24 responsiveness)' if c['response']==1 else '2-day email as in F11'}; {'prepaid cash ask hurts E2' if c['billing']=='prepaid3' else 'monthly in advance'}; {fails} objection failures."
+    why["acceptance"]=f"E1/E2: 90-day total ${rev90(c):,.0f} vs $16,500 target, headline ${c['fee']:,}; {'1-day email helps E1 (F3 phone hours, F24 responsiveness)' if c['response']==1 else '2-day email as in F11'}; {'prepaid cash ask hurts E2' if c['billing']=='prepaid3' else 'monthly in advance'}; {fails} objection failures."
     # --- Value and ROI clarity (E2,E5)
     v=7.0
     if c["value_line"]=="covers": v+=1
@@ -107,11 +107,12 @@ def score(c):
     if not c["hiring"]: d+=0.5
     if c["inspection"]==0 and not c["rescope"]: d-=0.5  # Month 1 overage unaddressed
     s["delivery"]=d
-    why["delivery"]=f"E3: {sold} advisor-hours sold vs 18 steady / 26 Month 1 modeled; {'1-day email strains cover when one advisor is out' if c['response']==1 else '2-day email leaves cover'}; {'re-scope trigger on markets or channels' if c['rescope'] else 'no re-scope trigger'}; {'inspection scoped separately handles Month 1 overage' if c['inspection'] else 'Month 1 overage inside the fee'}."
+    why["delivery"]=f"E3: {sold} advisor-hours sold vs 12 steady / 19 Month 1 modeled; {'1-day email strains cover when one advisor is out' if c['response']==1 else '2-day email leaves cover'}; {'re-scope trigger on markets or channels' if c['rescope'] else 'no re-scope trigger'}; {'inspection scoped separately handles Month 1 overage' if c['inspection'] else 'Month 1 overage inside the fee'}."
     # --- Benchmark fit (E5)
     b=8.0
     if not (200<=rate_sold<=500): b-=2
     if c["fee"]<=6000: b+=1
+    if c["fee"]<5000: b-=1  # under the F19 advisory floor
     elif c["fee"]>=7500: b-=2
     if c["fee"]<5000: b-=1
     if c["inspection"]>3500: b-=1
