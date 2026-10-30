@@ -61,6 +61,16 @@ configuration it refuses everything (403), so a fresh deploy never exposes a rep
 
 Recommended: Cloudflare Access (Zero Trust, free for up to 50 users).
 
+One command does the whole setup, including the Pages variables, with an API token that
+has Access (apps, policies, identity providers) and Pages edit permissions:
+
+```bash
+CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=...   python3 scripts/setup-access.py --email you@example.com --email client@example.com
+```
+
+Re-run it to change who can read reports. Addresses are passed on the command line and
+never stored in the repository. The manual equivalent:
+
 1. Zero Trust dashboard, Access, Applications, Add an application, Self-hosted.
    Application domain `audit.kaldera-analytics.com`, path `reports`.
 2. Policy: Allow, include Emails, list the client's addresses (and yours). Identity: One-time PIN is enough.
