@@ -1,6 +1,6 @@
 # Investment section: drop-in copy
 
-Client-facing. Passes G8 (no dashes), G9 (Kaldera's own terms only) and G10 (nothing internal). Replaces section 06 of Appendix A. Section 03 also changes: "Up to six hours" replaces "Up to ten hours." Section 05 loses its "Alongside" block: hiring support is not part of this engagement, at the owner's request.
+Client-facing. Passes G8 (no dashes), G9 (Kaldera's own terms only) and G10 (nothing internal). Replaces section 06 of Appendix A. Section 03 reads "12 hours a month, combined across both advisors, 6 hours each." Section 01 opens with the engagement overview the owner supplied. No two-business-day turnaround appears anywhere; the recap follows every session and clients have direct access to both advisors by chat or email. Section 05 loses its "Alongside" block: hiring support is not part of this engagement, at the owner's request.
 
 ## 06. Investment
 
@@ -13,7 +13,7 @@ Client-facing. Passes G8 (no dashes), G9 (Kaldera's own terms only) and G10 (not
 **Price label:** a month, flat
 
 **Body:**
-Fixed for the first 90 days and billed at the start of each month. The Month 1 account inspection is a single one-time fee of $1,500, so the first 90 days come to $16,500 in total. At day 90 we sit down together and agree terms for an extension.
+Fixed for the first 90 days and billed at the start of each month. The Month 1 account inspection is a single one-time fee of $1,500, so the first 90 days come to $16,500 in total. At day 90 we sit down together and agree terms for an extension. The engagement includes 12 hours a month in total with both advisors, 6 hours each, not 12 hours per advisor.
 
 **Spec rows:**
 - Fee: $5,000 a month, flat
@@ -23,9 +23,10 @@ Fixed for the first 90 days and billed at the start of each month. The Month 1 a
 
 **Included (list):**
 - Two lead advisors in every session
-- Up to six hours a month with both advisors
+- 12 hours a month combined across both advisors, 6 hours each
 - A two-hour working session each month
-- Written recaps and email answers within two business days
+- A written recap after every session
+- Direct access to both advisors by chat or email between sessions
 - Month 1 account inspection: plan, tracking, every quote form and the phone path
 
 **Value line:**
