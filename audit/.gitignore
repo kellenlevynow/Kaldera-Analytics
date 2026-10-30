@@ -6,3 +6,4 @@ reports/
 # Report data that identifies a client never enters this public repository.
 src/data/private/
 .dev.vars
+__pycache__/
