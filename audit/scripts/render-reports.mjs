@@ -7,6 +7,13 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDirs = [resolve(root, 'src/data'), resolve(root, 'src/data/private')];
 
+// In the Pages build, report data arrives as ciphertext in src/data/encrypted and
+// REPORT_DATA_KEY in the environment. Decrypt into the gitignored private folder first.
+if (process.env.REPORT_DATA_KEY) {
+  const { decryptAll } = await import('./report-crypto.mjs');
+  console.log(`decrypted ${decryptAll()} encrypted report(s)`);
+}
+
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 // Inline markup: `code`, **strong**, [E07] or [E07, E08] evidence refs.
 const inline = (s) =>

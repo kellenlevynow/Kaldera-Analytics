@@ -49,10 +49,18 @@ Sections absent from the data are left out.
 Evidence files (screenshots, exports) are never committed or served. The evidence index
 lists file names only. Inline references like `[E07]` link to the index.
 
-This repository is public, so no report data is committed. Report JSON lives in
-`src/data/private/` (gitignored) and is supplied at build time: upload it to the build
-environment, or keep it in a private repository that the Pages build pulls in. The first
-report, the anonymised sales training firm diagnostic, is held locally in that folder.
+This repository is public, so plain report data is never committed. Report JSON lives in
+`src/data/private/` (gitignored). To ship a report, encrypt it into `src/data/encrypted/`
+(committed) with a key that exists only in the Pages build environment:
+
+```bash
+node scripts/report-crypto.mjs keygen                      # once; store as REPORT_DATA_KEY (encrypted) in Pages
+REPORT_DATA_KEY=... node scripts/report-crypto.mjs encrypt src/data/private/<slug>.json
+```
+
+`npm run build` decrypts every `.json.enc` when `REPORT_DATA_KEY` is set and renders the result.
+Without the key, encrypted reports are skipped and the public pages still build. AES-256-GCM
+with a random nonce per file; losing the key means re-encrypting from the plain JSON you hold.
 
 ## Access control for reports
 
@@ -65,11 +73,12 @@ One command does the whole setup, including the Pages variables, with an API tok
 has Access (apps, policies, identity providers) and Pages edit permissions:
 
 ```bash
-CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=...   python3 scripts/setup-access.py --email you@example.com --email client@example.com
+CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=...   python3 scripts/setup-access.py --email client@example.com --team-email hello@example.com
 ```
 
-Re-run it to change who can read reports. Addresses are passed on the command line and
-never stored in the repository. The manual equivalent:
+Re-run it to change who can read reports. It also keeps the `kaldera-audit.pages.dev` host
+and its preview deployments team-only, the way the proposals site is set up. Addresses are
+passed on the command line and never stored in the repository. The manual equivalent:
 
 1. Zero Trust dashboard, Access, Applications, Add an application, Self-hosted.
    Application domain `audit.kaldera-analytics.com`, path `reports`.
