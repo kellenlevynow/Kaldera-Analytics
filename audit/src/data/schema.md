@@ -29,3 +29,13 @@ rendered as links to the evidence index.
 
 Data that identifies a client belongs in `src/data/private/` (gitignored) or in a
 private repository; this repository is public.
+
+## Executive assessment type
+
+A second report type, `meta.type: "assessment"`, renders the client-facing executive
+document: executive summary (`summary`: heading, state, findings, opportunity,
+priorities), `performance` (areas with figures and a reading), `findings` (observation,
+implication, response), `strategy` (components and how they integrate), `roadmap`
+(three phases with actions and what to validate), `measures` (leading indicators and
+outcomes) and `closing`. `meta.appendix` names the slug of the technical diagnostic that
+sits behind it. The renderer also writes a Markdown copy next to the HTML for sending.

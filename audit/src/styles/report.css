@@ -119,3 +119,39 @@
   body { background: #fff; }
   .rs, .finding, .claim { break-inside: avoid; }
 }
+
+/* Executive assessment */
+.sub { font-size: 0.65rem; letter-spacing: var(--track); text-transform: uppercase; color: var(--ink-3); font-weight: 500; margin: 2rem 0 0.75rem; }
+.points { display: grid; gap: 0.6rem; padding-left: 1.1rem; max-width: 44rem; color: var(--ink-2); }
+.points li { padding-left: 0.2rem; }
+.points li::marker { color: var(--ink-3); }
+.priorities { counter-reset: pr; display: grid; gap: 0; border-top: 1px solid var(--hair); max-width: 44rem; padding: 0; }
+.priorities li { list-style: none; display: grid; grid-template-columns: 2.5rem 1fr; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px solid var(--hair); }
+.priorities li::before { counter-increment: pr; content: counter(pr, decimal-leading-zero); font-size: 0.7rem; letter-spacing: var(--track); color: var(--ink-3); padding-top: 0.3rem; }
+.priorities strong { display: block; font-weight: 500; color: var(--ink); margin-bottom: 0.2rem; }
+.priorities span { color: var(--ink-2); font-size: 0.95rem; }
+.area { padding: 1.75rem 0; border-top: 1px solid var(--hair); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; }
+.area h3 { grid-column: 1 / -1; font-weight: 500; font-size: 1.1rem; color: var(--ink); }
+.area .kv { margin-top: 0; border-top: 0; grid-template-columns: minmax(0, 1fr); }
+.area .kv div { grid-template-columns: 1fr; }
+.area .read { color: var(--ink-2); }
+.oir { display: grid; gap: 1rem; max-width: 44rem; margin-top: 0.25rem; }
+.oir h4 { font-size: 0.6rem; letter-spacing: var(--track); text-transform: uppercase; color: var(--ink-3); font-weight: 500; margin-bottom: 0.3rem; }
+.oir p { color: var(--ink-2); }
+.oir .resp { padding-left: 1rem; border-left: 2px solid var(--ink); }
+.oir .resp p { color: var(--ink); }
+.component { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: 1rem; padding: 1.5rem 0; border-top: 1px solid var(--hair); }
+.component .cnum { font-size: 0.7rem; letter-spacing: var(--track); color: var(--ink-3); padding-top: 0.35rem; }
+.component h3 { font-weight: 500; font-size: 1.1rem; color: var(--ink); margin-bottom: 0.6rem; }
+.phases { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.phase-card { border-top: 2px solid var(--ink); padding-top: 1rem; }
+.phase-card h3 { font-size: 0.7rem; letter-spacing: var(--track); text-transform: uppercase; font-weight: 500; color: var(--ink); }
+.phase-card .goal { color: var(--ink); font-weight: 500; margin: 0.5rem 0 0.9rem; }
+.phase-card .points { font-size: 0.92rem; gap: 0.5rem; }
+.phase-card .validate { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--hair); font-size: 0.9rem; color: var(--ink-2); }
+.phase-card .validate span { display: block; font-size: 0.6rem; letter-spacing: var(--track); text-transform: uppercase; color: var(--ink-3); margin-bottom: 0.25rem; }
+.measures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+.measures .sub { margin-top: 1rem; }
+.appendix-note { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--hair); font-size: 0.9rem; color: var(--ink-3); }
+.appendix-note a { color: var(--ink-2); }
+@media (max-width: 900px) { .phases { grid-template-columns: minmax(0, 1fr); } .area { grid-template-columns: minmax(0, 1fr); gap: 1rem; } .measures { grid-template-columns: minmax(0, 1fr); } .component { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; } }
