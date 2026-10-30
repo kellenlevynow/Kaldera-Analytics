@@ -18,7 +18,7 @@ export const site = {
 
   location: 'Boise, Idaho',
   coordinates: '43.61° N 116.20° W',
-  engagements: 'Open for 2026'
+  engagements: 'Open for 2027'
 } as const;
 
 export type SiteConfig = typeof site;
