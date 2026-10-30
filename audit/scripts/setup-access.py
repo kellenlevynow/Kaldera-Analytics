@@ -44,7 +44,9 @@ def main():
     p.add_argument("--host", default="audit.kaldera-analytics.com")
     p.add_argument("--path", default="reports")
     p.add_argument("--pages-project", default="kaldera-audit")
-    p.add_argument("--session", default="24h")
+    p.add_argument("--session", default="168h")
+    p.add_argument("--team-email", action="append", default=[], help="team address allowed on every app, including the pages.dev host")
+    p.add_argument("--pages-host", default="kaldera-audit.pages.dev", help="pages.dev host to keep team-only; empty to skip")
     p.add_argument("--app-name", default="Kaldera Analytics reports")
     a = p.parse_args()
     token = os.environ.get("CLOUDFLARE_API_TOKEN")
@@ -70,7 +72,7 @@ def main():
     app = next((x for x in apps if x.get("domain") == domain), None)
     spec = {
         "name": a.app_name, "type": "self_hosted", "domain": domain, "session_duration": a.session,
-        "allowed_idps": [otp["id"]], "auto_redirect_to_identity": True, "app_launcher_visible": False,
+        "allowed_idps": [otp["id"]], "auto_redirect_to_identity": True, "app_launcher_visible": True,
         "http_only_cookie_attribute": True, "same_site_cookie_attribute": "lax", "enable_binding_cookie": False,
         "skip_interstitial": True,
     }
@@ -81,18 +83,36 @@ def main():
         app = call("POST", f"{base}/apps", token, spec)
         print(f"Created Access application {app['id']} for {domain}")
 
-    include = [{"email": {"email": e.strip().lower()}} for e in a.email]
-    policies = call("GET", f"{base}/apps/{app['id']}/policies", token)
-    pol = next((x for x in policies if x["name"] == "Allowed readers"), None)
-    body = {"name": "Allowed readers", "decision": "allow", "include": include, "exclude": [], "require": [], "precedence": 1}
-    if pol:
-        call("PUT", f"{base}/apps/{app['id']}/policies/{pol['id']}", token, body)
-        print(f"Updated policy with {len(include)} address(es)")
-    else:
-        call("POST", f"{base}/apps/{app['id']}/policies", token, body)
-        print(f"Created policy with {len(include)} address(es)")
+    def upsert_policy(app_id, name, emails):
+        include = [{"email": {"email": e.strip().lower()}} for e in dict.fromkeys(emails)]
+        policies = call("GET", f"{base}/apps/{app_id}/policies", token)
+        pol = next((x for x in policies if x["name"] == name), None)
+        body = {"name": name, "decision": "allow", "include": include, "exclude": [], "require": [], "precedence": 1}
+        if pol:
+            call("PUT", f"{base}/apps/{app_id}/policies/{pol['id']}", token, body)
+            print(f"Updated policy '{name}' with {len(include)} address(es)")
+        else:
+            call("POST", f"{base}/apps/{app_id}/policies", token, body)
+            print(f"Created policy '{name}' with {len(include)} address(es)")
 
-    aud = app["aud"]
+    upsert_policy(app["id"], "Allowed readers", a.email + a.team_email)
+    auds = [app["aud"]]
+
+    # Like the proposals site: the pages.dev host (and its preview subdomains) stays team-only.
+    if a.pages_host:
+        host_domains = [a.pages_host, f"*.{a.pages_host}"]
+        host_app = next((x for x in apps if x.get("domain") == a.pages_host), None)
+        host_spec = dict(spec, name=a.pages_host, domain=a.pages_host, self_hosted_domains=host_domains)
+        if host_app:
+            host_app = call("PUT", f"{base}/apps/{host_app['id']}", token, host_spec)
+            print(f"Updated team-only Access application for {a.pages_host}")
+        else:
+            host_app = call("POST", f"{base}/apps", token, host_spec)
+            print(f"Created team-only Access application for {a.pages_host}")
+        upsert_policy(host_app["id"], "Kaldera team", a.team_email or a.email)
+        auds.append(host_app["aud"])
+
+    aud = ",".join(auds)
     proj_path = f"/accounts/{acct}/pages/projects/{a.pages_project}"
     proj = call("GET", proj_path, token)
     env = proj.get("deployment_configs", {}).get("production", {}).get("env_vars") or {}
@@ -105,6 +125,7 @@ def main():
     print(f"Pages project {a.pages_project}: REPORT_ACCESS_MODE=access, ACCESS_TEAM_DOMAIN, ACCESS_AUD set")
     print("Trigger a new deployment (push to main or retry the latest deploy) so the Functions pick up the variables.")
     print(f"Verify: curl -sI https://{domain}/ should return a 302 to https://{team_domain}/... and a signed-in reader should get 200.")
+    print("Set REPORT_DATA_KEY separately as an encrypted variable; this script never handles it.")
 
 
 if __name__ == "__main__":
