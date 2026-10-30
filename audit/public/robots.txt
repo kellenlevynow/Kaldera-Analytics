@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /reports/
+Disallow: /api/
+
+Sitemap: https://audit.kaldera-analytics.com/sitemap.xml

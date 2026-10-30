@@ -1,0 +1,19 @@
+.hero { padding: clamp(4rem, 10vw, 8rem) var(--gutter) clamp(3rem, 6vw, 5rem); border-bottom: 1px solid var(--hair); max-width: 84rem; }
+.hero .eyebrow { margin-bottom: 1.5rem; }
+.hero h1 { max-width: 20ch; }
+.hero .dek { margin-top: 1.75rem; }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2rem; margin-top: 2.25rem; }
+.hero-spec { margin-top: 3rem; max-width: 44rem; }
+.section { max-width: 84rem; margin: 0 auto; }
+.process { counter-reset: p; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; list-style: none; }
+.process li { border-top: 1px solid var(--hair); padding-top: 1.25rem; }
+.process .num { display: block; font-size: 0.7rem; letter-spacing: var(--track); color: var(--ink-3); margin-bottom: 0.9rem; }
+.process h3 { font-weight: 500; font-size: 1.05rem; color: var(--ink); margin-bottom: 0.6rem; }
+.process p { color: var(--ink-2); font-size: 0.95rem; }
+.compare td { width: 50%; }
+.compare td:first-child { color: var(--ink-3); }
+.compare td:last-child { color: var(--ink); }
+.inquire { border-bottom: 0; }
+.form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+@media (max-width: 900px) { .process { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .process { grid-template-columns: minmax(0, 1fr); } .hero h1 { max-width: none; } }

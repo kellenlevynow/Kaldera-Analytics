@@ -1,0 +1,20 @@
+{
+  "name": "kaldera-audit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "render": "node scripts/render-reports.mjs",
+    "dev": "npm run render && vite",
+    "build": "npm run render && tsc --noEmit && vite build",
+    "preview": "vite preview --port 4174",
+    "pages:dev": "wrangler pages dev dist --port 8788",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261023.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "wrangler": "^4.156.0"
+  }
+}

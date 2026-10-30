@@ -1,0 +1,32 @@
+/* Kaldera type and surface system, shared with the main site. Two surfaces:
+   the dark marketing surface and the paper surface for long-form reports. */
+@font-face { font-family: 'Barlow'; font-weight: 400; font-display: swap; src: url('/fonts/barlow-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 500; font-display: swap; src: url('/fonts/barlow-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 600; font-display: swap; src: url('/fonts/barlow-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 600; font-display: swap; src: url('/fonts/barlow-condensed-latin-600-normal.woff2') format('woff2'); }
+
+:root {
+  --font: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-cond: 'Barlow Condensed', var(--font);
+  --track: 0.2em;
+  --gutter: clamp(1.25rem, 3.4vw, 3.25rem);
+  --measure: 38rem;
+  --bg: #000;
+  --ink: #fff;
+  --ink-2: #a7a7a7;
+  --ink-3: #6b6b6b;
+  --hair: rgba(255, 255, 255, 0.2);
+  --hair-strong: rgba(255, 255, 255, 0.45);
+  --panel: rgba(255, 255, 255, 0.04);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-surface='paper'] {
+  --bg: #f4f4f1;
+  --ink: #111;
+  --ink-2: #4b4b4b;
+  --ink-3: #7c7c7c;
+  --hair: rgba(0, 0, 0, 0.16);
+  --hair-strong: rgba(0, 0, 0, 0.5);
+  --panel: rgba(0, 0, 0, 0.035);
+}
