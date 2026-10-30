@@ -49,10 +49,18 @@ Sections absent from the data are left out.
 Evidence files (screenshots, exports) are never committed or served. The evidence index
 lists file names only. Inline references like `[E07]` link to the index.
 
-This repository is public, so no report data is committed. Report JSON lives in
-`src/data/private/` (gitignored) and is supplied at build time: upload it to the build
-environment, or keep it in a private repository that the Pages build pulls in. The first
-report, the anonymised sales training firm diagnostic, is held locally in that folder.
+This repository is public, so plain report data is never committed. Report JSON lives in
+`src/data/private/` (gitignored). To ship a report, encrypt it into `src/data/encrypted/`
+(committed) with a key that exists only in the Pages build environment:
+
+```bash
+node scripts/report-crypto.mjs keygen                      # once; store as REPORT_DATA_KEY (encrypted) in Pages
+REPORT_DATA_KEY=... node scripts/report-crypto.mjs encrypt src/data/private/<slug>.json
+```
+
+`npm run build` decrypts every `.json.enc` when `REPORT_DATA_KEY` is set and renders the result.
+Without the key, encrypted reports are skipped and the public pages still build. AES-256-GCM
+with a random nonce per file; losing the key means re-encrypting from the plain JSON you hold.
 
 ## Access control for reports
 
