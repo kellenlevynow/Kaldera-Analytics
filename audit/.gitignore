@@ -2,7 +2,7 @@ node_modules
 dist
 .wrangler
 # Rendered reports are build output; the source of truth is src/data.
-reports/
+/reports/
 # Report data that identifies a client never enters this public repository.
 src/data/private/
 .dev.vars
