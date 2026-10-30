@@ -40,11 +40,13 @@ For `pages:dev`, put local-only values in `.dev.vars` (gitignored), for example
 
 ## Reports
 
-A report is a JSON file in `src/data/` (schema in `src/data/schema.md`). The renderer turns
-it into a page under `/reports/<slug>/`, in the same section order every time: executive
-summary, scope, method, funnel overview, findings, measurement, claims tested,
-conclusions, recommendations and roadmap, open questions, standard, evidence index.
-Sections absent from the data are left out.
+A report is a JSON file in `src/data/` (schema in `src/data/schema.md`). Two types render
+to `/reports/<slug>/`: the executive assessment (`meta.type: "assessment"`), the client-facing
+document with summary, performance, findings, strategy, 30/60/90 roadmap, measures and
+closing; and the technical diagnostic, with scope, method, funnel overview, findings,
+measurement, claims tested, conclusions, recommendations, open questions and evidence
+index. An assessment links to its diagnostic through `meta.appendix`. Sections absent from
+the data are left out, and the renderer writes a Markdown copy of each assessment.
 
 Evidence files (screenshots, exports) are never committed or served. The evidence index
 lists file names only. Inline references like `[E07]` link to the index.
