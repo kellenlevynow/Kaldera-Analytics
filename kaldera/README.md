@@ -13,6 +13,14 @@ The copy sells marketing expertise, judgment, execution and connected systems, n
 - Voice: plain, declarative, specific, composed. Outcomes before mechanics. Name the metric. No invented clients, results, guarantees or credentials. No generic agency language.
 - The scene, telemetry and coordinates are an aesthetic layer. No sentence may depend on a lunar reference to make sense.
 
+## Email signature assets
+
+`public/email/` holds images referenced by email signatures. Every email ever sent points at these exact URLs, so they are permanent: never rename, move, edit in place or delete a file here, and keep this folder through any redesign. To change the mark, add a new file under a new name and update the signature; old emails keep showing the old mark.
+
+| File | Used by | Notes |
+|---|---|---|
+| `email/kaldera-mark.png` | Gmail signature | Orbit mark on a black tile, 168 px, shown at 56 px. Served with a one-year immutable cache. |
+
 ## Site settings
 
 Everything site-specific lives in one file, `src/site.config.ts`:
