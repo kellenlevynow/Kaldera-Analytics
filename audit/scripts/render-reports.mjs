@@ -147,6 +147,7 @@ function render(d) {
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/styles/tokens.css" />
     <link rel="stylesheet" href="/src/styles/base.css" />
@@ -254,6 +255,7 @@ function renderAssessment(d) {
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/styles/tokens.css" />
     <link rel="stylesheet" href="/src/styles/base.css" />
