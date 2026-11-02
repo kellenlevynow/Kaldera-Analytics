@@ -1,9 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" fill="#000"/>
-  <g fill="none" stroke="#fff" stroke-width="2">
-    <ellipse cx="32" cy="38" rx="24" ry="10"/>
-    <ellipse cx="32" cy="41" rx="15" ry="6"/>
-    <ellipse cx="32" cy="43" rx="7" ry="2.6"/>
-  </g>
-  <circle cx="14" cy="14" r="2.5" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Kaldera Analytics</title>
+  <rect width="32" height="32" fill="#000"/>
+  <circle cx="15" cy="17" r="10.5" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.25"/>
+  <path fill="#fff" d="M25.32 18.97A10.5 10.5 0 1 1 13.04 6.69A9 9 0 1 0 25.32 18.97Z"/>
+  <circle cx="26.5" cy="5.5" r="2.25" fill="#fff"/>
 </svg>
