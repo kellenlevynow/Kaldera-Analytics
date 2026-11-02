@@ -7,7 +7,6 @@ function siteTokens(): Plugin {
   const tokens: Record<string, string> = {
     '%SITE_URL%': site.url,
     '%SITE_EMAIL%': site.email,
-    '%SITE_PORTFOLIO%': site.portfolioUrl,
     '%SITE_DESCRIPTION%': site.description
   };
   return {

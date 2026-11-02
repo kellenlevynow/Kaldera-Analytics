@@ -9,7 +9,7 @@ const html = document.documentElement;
 html.classList.add('js');
 if (new URLSearchParams(window.location.search).has('og')) html.classList.add('og');
 
-const hud = initHud({ motion: motionStore, quality: qualityStore, email: site.email, portfolioUrl: site.portfolioUrl });
+const hud = initHud({ motion: motionStore, quality: qualityStore, email: site.email });
 const reveals = initReveals(() => motionStore.get() === 'reduced');
 motionStore.subscribe(() => reveals.rebuild());
 
