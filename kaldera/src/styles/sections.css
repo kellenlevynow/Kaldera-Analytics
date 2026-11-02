@@ -148,6 +148,19 @@ html:not(.has-scene) .panel::before {
   justify-content: center;
 }
 
+.colophon a {
+  margin-left: 1.25em;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--hair);
+  transition: color 0.2s linear, border-color 0.2s linear;
+}
+
+.colophon a:hover,
+.colophon a:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 .colophon {
   margin-top: 3rem;
   font-size: 0.6rem;
