@@ -19,7 +19,6 @@ interface HudOptions {
   motion: Store<MotionMode>;
   quality: Store<QualityMode>;
   email: string;
-  portfolioUrl: string;
 }
 
 function query<T extends Element>(selector: string, root: ParentNode = document): T | null {
@@ -94,8 +93,6 @@ export function initHud(options: HudOptions): Hud {
   bindToggle('data-quality-opt', options.quality);
   bindCopy(options.email);
 
-  const portfolio = query<HTMLAnchorElement>('[data-site-portfolio]');
-  if (portfolio) portfolio.href = options.portfolioUrl;
 
   const railLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('.rail-link'));
   const sections = Array.from(document.querySelectorAll<HTMLElement>('section[data-index]'));

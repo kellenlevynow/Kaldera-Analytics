@@ -22,9 +22,8 @@ Everything site-specific lives in one file, `src/site.config.ts`:
 | `domain` | `kaldera-analytics.com` |
 | `url` | `https://kaldera-analytics.com` |
 | `email` | `hello@kaldera-analytics.com` |
-| `portfolioUrl` | `https://kellenlevynow.github.io/portfolio/` |
 
-`index.html` reads these at build time (canonical URL, Open Graph tags, mailto link, portfolio link) and `src/main.ts` applies the email and portfolio link at runtime, so nothing else needs editing. After changing them, run `npm run build` again.
+`index.html` reads these at build time (canonical URL, Open Graph tags, mailto link) and `src/main.ts` applies the email at runtime, so nothing else needs editing. After changing them, run `npm run build` again.
 
 `public/og.png` is a 1200 by 630 capture of the hero. Regenerate it after any copy change by opening the site with `?og` appended (HUD hidden) and taking a 1200 by 630 screenshot.
 
