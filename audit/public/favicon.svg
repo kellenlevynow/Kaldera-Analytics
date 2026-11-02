@@ -1,7 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Kaldera Analytics</title>
+  <defs><clipPath id="front"><rect x="-8" y="17.2" width="48" height="24" transform="rotate(-18 16 17.2)"/></clipPath></defs>
   <rect width="32" height="32" fill="#000"/>
-  <circle cx="15" cy="17" r="10.5" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.25"/>
-  <path fill="#fff" d="M25.32 18.97A10.5 10.5 0 1 1 13.04 6.69A9 9 0 1 0 25.32 18.97Z"/>
-  <circle cx="26.5" cy="5.5" r="2.25" fill="#fff"/>
+  <ellipse cx="16" cy="17.2" rx="15" ry="4.6" transform="rotate(-18 16 17.2)" fill="none" stroke="#fff" stroke-width="1.7"/>
+  <path fill="#fff" stroke="#000" stroke-width="36.7" paint-order="stroke" d="M54 12V688Q54 693 57.5 696.5Q61 700 66 700H158Q163 700 166.5 696.5Q170 693 170 688V412Q170 408 172.0 407.5Q174 407 176 410L326 691Q331 700 341 700H440Q447 700 449.0 696.0Q451 692 448 686L298 405Q297 401 297 399L459 14Q460 12 460 8Q460 0 450 0H351Q340 0 337 9L219 298Q218 301 216.0 300.5Q214 300 212 298L172 231Q170 227 170 225V12Q170 7 166.5 3.5Q163 0 158 0H66Q61 0 57.5 3.5Q54 7 54 12Z" transform="translate(8.290 25.700) scale(0.03000 -0.03000)"/>
+  <g clip-path="url(#front)">
+    <ellipse cx="16" cy="17.2" rx="15" ry="4.6" transform="rotate(-18 16 17.2)" fill="none" stroke="#000" stroke-width="2.4"/>
+    <ellipse cx="16" cy="17.2" rx="15" ry="4.6" transform="rotate(-18 16 17.2)" fill="none" stroke="#fff" stroke-width="1.7"/>
+  </g>
+  <circle cx="29.4" cy="12.1" r="2.2" fill="#fff"/>
 </svg>
