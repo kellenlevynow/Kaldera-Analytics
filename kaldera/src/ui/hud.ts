@@ -25,7 +25,7 @@ function query<T extends Element>(selector: string, root: ParentNode = document)
   return root.querySelector<T>(selector);
 }
 
-function bindToggle<T extends string>(attribute: string, store: Store<T>): void {
+export function bindToggle<T extends string>(attribute: string, store: Store<T>): void {
   const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(`[${attribute}]`));
   const render = (value: T) => {
     for (const button of buttons) {
@@ -42,7 +42,7 @@ function bindToggle<T extends string>(attribute: string, store: Store<T>): void 
   store.subscribe(render);
 }
 
-function bindCopy(email: string): void {
+export function bindCopy(email: string): void {
   const button = query<HTMLButtonElement>('[data-copy-email]');
   const link = query<HTMLAnchorElement>('[data-site-email]');
   if (link) {

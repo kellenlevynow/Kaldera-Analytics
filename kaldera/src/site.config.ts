@@ -14,6 +14,13 @@ export const site = {
   // Studio contact address.
   email: 'hello@kaldera-analytics.com',
 
+  // The wine page at /wine: wineries, vineyards, estates, wine bars, storage, private vaults, tour operators.
+  wine: {
+    path: '/wine',
+    description:
+      'An interactive search through a pile of wine bottles, ending on the one that is exactly right. Kaldera Analytics builds marketing and revenue systems for wineries, estates, wine bars, storage facilities, private collections and wine country tour operators.'
+  },
+
   location: 'Boise, Idaho',
   coordinates: '43.61° N 116.20° W',
   engagements: 'Open for 2027'

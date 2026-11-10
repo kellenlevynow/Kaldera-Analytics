@@ -23,20 +23,21 @@ function heroIntro(hero: HTMLElement, reduced: boolean): gsap.core.Timeline {
 
   hero.classList.add('is-shown');
   const tl = gsap.timeline({ defaults: { ease: EASE } });
+  const present = (...items: Array<HTMLElement | HTMLElement[] | null>) => items.flatMap((item) => (Array.isArray(item) ? item : item ? [item] : []));
 
   if (reduced) {
-    tl.set([hudItems, bottom, lines, dek, eyebrow, meta, cue], { clearProps: 'transform' })
-      .fromTo([hudItems, bottom, eyebrow, lines, dek, meta, cue], { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'none', stagger: 0.02 });
+    tl.set(present(hudItems, bottom, lines, dek, eyebrow, meta, cue), { clearProps: 'transform' })
+      .fromTo(present(hudItems, bottom, eyebrow, lines, dek, meta, cue), { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'none', stagger: 0.02 });
     return tl;
   }
 
-  tl.fromTo(hudItems, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.06 }, 0)
-    .fromTo(eyebrow, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.8 }, 0.25)
-    .fromTo(lines, { yPercent: 110, y: 0 }, { yPercent: 0, y: 0, duration: 1.3, stagger: 0.09 }, 0.3)
-    .fromTo(dek, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 1.0 }, 0.9)
-    .fromTo(meta, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.9 }, 1.05)
-    .fromTo(bottom, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08 }, 1.2)
-    .fromTo(cue, { opacity: 0 }, { opacity: 1, duration: 0.8 }, 1.6);
+  if (hudItems.length) tl.fromTo(hudItems, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.06 }, 0);
+  if (eyebrow) tl.fromTo(eyebrow, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.8 }, 0.25);
+  if (lines.length) tl.fromTo(lines, { yPercent: 110, y: 0 }, { yPercent: 0, y: 0, duration: 1.3, stagger: 0.09 }, 0.3);
+  if (dek) tl.fromTo(dek, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 1.0 }, 0.9);
+  if (meta) tl.fromTo(meta, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.9 }, 1.05);
+  if (bottom.length) tl.fromTo(bottom, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08 }, 1.2);
+  if (cue) tl.fromTo(cue, { opacity: 0 }, { opacity: 1, duration: 0.8 }, 1.6);
   return tl;
 }
 
@@ -44,19 +45,20 @@ function nodeReveal(section: HTMLElement, reduced: boolean): gsap.core.Timeline 
   const eyebrow = section.querySelector<HTMLElement>('.eyebrow');
   const lines = gsap.utils.toArray<HTMLElement>('.line-inner', section);
   const dek = section.querySelector<HTMLElement>('.dek');
-  const rows = gsap.utils.toArray<HTMLElement>('.spec-row, .channel, .colophon', section);
+  const rows = gsap.utils.toArray<HTMLElement>('.spec-row, .hero-meta, .channel, .colophon', section);
   const tl = gsap.timeline({ paused: true, defaults: { ease: EASE } });
+  const present = (...items: Array<HTMLElement | HTMLElement[] | null>) => items.flatMap((item) => (Array.isArray(item) ? item : item ? [item] : []));
 
   if (reduced) {
     tl.set(lines, { clearProps: 'transform' })
-      .fromTo([eyebrow, lines, dek, rows], { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'none', stagger: 0.02 });
+      .fromTo(present(eyebrow, lines, dek, rows), { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'none', stagger: 0.02 });
     return tl;
   }
 
-  tl.fromTo(eyebrow, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.7 }, 0)
-    .fromTo(lines, { yPercent: 110, y: 0 }, { yPercent: 0, y: 0, duration: 1.2, stagger: 0.09 }, 0.05)
-    .fromTo(dek, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.9 }, 0.3)
-    .fromTo(rows, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.07 }, 0.45);
+  if (eyebrow) tl.fromTo(eyebrow, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.7 }, 0);
+  if (lines.length) tl.fromTo(lines, { yPercent: 110, y: 0 }, { yPercent: 0, y: 0, duration: 1.2, stagger: 0.09 }, 0.05);
+  if (dek) tl.fromTo(dek, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.9 }, 0.3);
+  if (rows.length) tl.fromTo(rows, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.07 }, 0.45);
   return tl;
 }
 
@@ -76,7 +78,8 @@ export function initReveals(isReduced: () => boolean): Reveals {
       triggers.push(
         ScrollTrigger.create({
           trigger: section,
-          start: 'top 65%',
+          // A section can ask for a later start (the wine reveal waits for the camera to settle).
+          start: section.dataset.revealStart ?? 'top 65%',
           onEnter: () => {
             section.classList.add('is-shown');
             tl.play();
