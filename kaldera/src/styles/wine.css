@@ -1,0 +1,152 @@
+/* The wine page: one continuous descent. No rail, captions over the scene, the reveal panel at the floor. */
+html[data-page='wine'] .beat {
+  padding-right: var(--gutter);
+}
+
+.beat-depth {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: block;
+  padding: 0;
+}
+
+/* Captions: a hairline and one short line, scrubbed in and out by scroll. */
+.caption {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  gap: 0.9rem;
+  max-width: 22rem;
+  transform: translateY(-50%);
+  font-size: clamp(0.95rem, 1.5vw, 1.35rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.caption-left {
+  left: var(--gutter);
+}
+
+.caption-right {
+  right: var(--gutter);
+  justify-items: end;
+  text-align: right;
+}
+
+.caption-rule {
+  display: block;
+  width: 3rem;
+  height: 1px;
+  background: var(--ink);
+}
+
+.caption-text {
+  text-shadow: 0 0 24px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.9);
+}
+
+html:not(.js) .caption {
+  opacity: 1;
+}
+
+/* The reveal panel sits on the left; the camera frames the bottle on the right. */
+.panel-found {
+  grid-column: 1 / span 5;
+}
+
+.panel-found .hero-meta {
+  margin-top: 1.75rem;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.panel-found .dek {
+  font-size: 1rem;
+}
+
+.panel-found .display-h2 {
+  font-size: clamp(1.3rem, 2.3vw, 2rem);
+}
+
+.panel-found .spec {
+  margin-top: 1.5rem;
+}
+
+.panel-found .channel {
+  margin-top: 1.5rem;
+}
+
+.panel-found .colophon {
+  margin-top: 1.75rem;
+}
+
+.beat-found {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* Settling readout: the HUD status reads the pile while the physics settles. */
+.hud-status [data-scene-status] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .panel-found {
+    grid-column: 1 / span 7;
+  }
+}
+
+@media (max-width: 760px) {
+  .caption {
+    top: auto;
+    bottom: 28%;
+    max-width: 16rem;
+    transform: none;
+  }
+  .panel-found,
+  .beat-found .panel-close {
+    grid-column: 1 / -1;
+  }
+  .panel-found .dek {
+    font-size: 0.92rem;
+  }
+  .panel-found .hero-meta {
+    display: none;
+  }
+  .beat-found {
+    align-items: end;
+  }
+  .beat-found .spec-row {
+    grid-template-columns: 4.5rem 1fr;
+  }
+  .panel-found .dek {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .panel-found .colophon {
+    display: none;
+  }
+  .panel-found .channel {
+    margin-top: 1.25rem;
+  }
+}
+
+@media (max-height: 940px) and (min-width: 761px) {
+  .panel-found .hero-meta {
+    display: none;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 761px) {
+  .panel-found .dek {
+    font-size: 0.9rem;
+  }
+  .panel-found .colophon {
+    display: none;
+  }
+}

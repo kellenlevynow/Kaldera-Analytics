@@ -13,6 +13,16 @@ The copy sells marketing expertise, judgment, execution and connected systems, n
 - Voice: plain, declarative, specific, composed. Outcomes before mechanics. Name the metric. No invented clients, results, guarantees or credentials. No generic agency language.
 - The scene, telemetry and coordinates are an aesthetic layer. No sentence may depend on a lunar reference to make sense.
 
+## The wine page (`/wine`)
+
+`wine.html` is a second entry: a scroll-driven search through a physics pile of wine bottles for wineries, vineyards, estates, wine bars, storage facilities, private collections and wine country tour operators. The animation is the pitch; the copy is one headline, two captions and one message at the floor.
+
+- `src/wine.ts` wires the HUD, the captions and the lazy scene import. `src/wine/scene.ts` assembles the scene; `bottle.ts` builds the lathe shapes; `labels.ts` draws the label atlas (every estate on it is invented); `materials.ts` holds the cellar environment and the shared materials; `physics.ts` runs the pile.
+- Physics is Rapier (`@dimforge/rapier3d`). The WebAssembly binary ships as a static asset (about 1.1 MB gzipped, cached immutably); `src/wine/rapier.ts` fetches and binds it, and `vite.config.ts` aliases the package's wasm import to `src/wine/vendor/rapier-glue.ts`. The CSP in `public/_headers` carries `'wasm-unsafe-eval'` for it.
+- The pile: a well with a fixed bed of flat bottles on the floor, several hundred dynamic bottles (compound capsule colliders) settled over a few hundred steps before the canvas fades in, a kinematic probe that rides with the camera and shoves bottles aside, and a kinematic sphere that grows around the hero bottle for the reveal. The hero is the only monochrome bottle.
+- Camera: a slow spiral down through the pile, the screen rolling with the direction of travel, then a lift to eye level with the hero's label. Depth of field (BokehPass) and shadows run on the high tier only; medium and low tiers cut bottle count, pixel ratio and segments. Reduced motion drops the damping, the sway and the parallax.
+- Review flags: `?debug` keeps the frame monitor from changing tiers, `?tier=high|medium|low` forces a tier, `?instant` removes the scroll damping, `?count=N` (with `?debug`) overrides the bottle count, `?og` hides the HUD for a capture. `window.__kaldera.diagnostics()` reports draw calls, triangles, physics time and the active features.
+
 ## Email signature assets
 
 `public/email/` holds images referenced by email signatures. Every email ever sent points at these exact URLs, so they are permanent: never rename, move, edit in place or delete a file here, and keep this folder through any redesign. To change the mark, add a new file under a new name and update the signature; old emails keep showing the old mark.
@@ -58,6 +68,8 @@ public/_headers            Cloudflare cache and security headers (CSP included)
 public/fonts/              Barlow 400/500/600 and Barlow Condensed 600, latin woff2
 public/favicon.svg, robots.txt, og.png
 src/main.ts                HUD wiring, reveals, scroll progress, lazy scene import
+wine.html, src/wine.ts     the wine page entry (see above)
+src/wine/                  scene, bottle, labels, materials, physics, rapier loader, hud, overlay
 src/site.config.ts         domain, email, coordinates (placeholders flagged)
 src/styles/                tokens, base, hud, sections, fallback
 src/ui/                    hud, reveal (GSAP), motion (preferences)
