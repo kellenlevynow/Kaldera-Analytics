@@ -14,6 +14,12 @@ export const site = {
   // Studio contact address.
   email: 'hello@kaldera-analytics.com',
 
+  // Primary navigation, rendered into every page's header at build time by
+  // vite.config.ts, which marks the current page. To add a destination, add an
+  // entry here; the header lays items out in order and collapses to the menu on
+  // narrow screens. Labels are plain text, hrefs are site-relative.
+  navigation: [{ label: 'Wine, Estates & Collections', href: '/wine' }],
+
   // The wine page at /wine: wineries, vineyards, estates, wine bars, storage, private vaults, tour operators.
   wine: {
     path: '/wine',

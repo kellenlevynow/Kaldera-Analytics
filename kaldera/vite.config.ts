@@ -1,8 +1,22 @@
 import { defineConfig, type Plugin } from 'vite';
 import { site } from './src/site.config';
 
-// Replaces %SITE_*% tokens in index.html with values from src/site.config.ts,
-// so the owner edits one file when the domain and contact email are final.
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// The primary navigation items from site.navigation, with the current page marked.
+function navMarkup(pagePath: string): string {
+  return site.navigation
+    .map((item) => {
+      const current = item.href === pagePath ? ' aria-current="page"' : '';
+      return `<li class="nav-item"><a class="nav-link" href="${escapeHtml(item.href)}"${current}>${escapeHtml(item.label)}</a></li>`;
+    })
+    .join('');
+}
+
+// Replaces %SITE_*% tokens in each page with values from src/site.config.ts,
+// so the owner edits one file for the domain, contact email and navigation.
 function siteTokens(): Plugin {
   const tokens: Record<string, string> = {
     '%SITE_URL%': site.url,
@@ -14,8 +28,11 @@ function siteTokens(): Plugin {
     name: 'kaldera-site-tokens',
     transformIndexHtml: {
       order: 'pre',
-      handler(html) {
-        return Object.entries(tokens).reduce((out, [key, value]) => out.split(key).join(value), html);
+      handler(html, ctx) {
+        const page = ctx.filename.replace(/\\/g, '/').split('/').pop()?.replace(/\.html$/, '') ?? 'index';
+        const pagePath = page === 'index' ? '/' : `/${page}`;
+        const out = Object.entries(tokens).reduce((acc, [key, value]) => acc.split(key).join(value), html);
+        return out.split('%SITE_NAV%').join(navMarkup(pagePath));
       }
     }
   };

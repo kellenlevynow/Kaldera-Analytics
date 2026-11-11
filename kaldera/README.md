@@ -57,6 +57,10 @@ Everything site-specific lives in one file, `src/site.config.ts`:
 
 `index.html` reads these at build time (canonical URL, Open Graph tags, mailto link) and `src/main.ts` applies the email at runtime, so nothing else needs editing. After changing them, run `npm run build` again.
 
+### Navigation
+
+The header's primary navigation comes from `navigation` in `src/site.config.ts`, one entry per destination (`label` and a site-relative `href`). `vite.config.ts` renders the entries into every page's header and marks the current page. Items sit in a horizontal list beside the call to action on wide screens; below 900px they collapse behind a Menu button into a panel of hairline rows, and on phones the call to action moves into that panel. Adding a destination is one more entry; the status line in the middle of the header shrinks and then hides (1280px) to make room, so keep labels short as the list grows.
+
 `public/og.png` is a 1200 by 630 capture of the hero. Regenerate it after any copy change by opening the site with `?og` appended (HUD hidden) and taking a 1200 by 630 screenshot.
 
 ## Scripts
@@ -87,7 +91,7 @@ src/wine/                  scene, bottle, labels, materials, physics, layout, ra
 scripts/bake-pile.mjs      pours and settles the wine page's pile offline
 src/site.config.ts         domain, email, coordinates (placeholders flagged)
 src/styles/                tokens, base, hud, sections, fallback
-src/ui/                    hud, reveal (GSAP), motion (preferences)
+src/ui/                    hud, nav, reveal (GSAP), motion (fixed configuration)
 src/scene/                 index, heightfield, terrain, bake, bake.worker, rocks, shaders, sky, network, camera, noise, quality
 wrangler.jsonc             Workers static assets config (assets.directory ./dist)
 ```
@@ -101,7 +105,7 @@ wrangler.jsonc             Workers static assets config (assets.directory ./dist
 - A boulder field (`rocks.ts`) scatters noise-displaced, plane-cut icosahedra along the crest and the upper walls in one merged flat-shaded mesh, half buried, carrying the baked shade of their ground, kept clear of the camera path and the installation pads.
 - Twelve draw calls at most: terrain, boulders, merged structures, beacons, rim link (with the reserve cable), two orbital rings, satellites, uplink, stars, Sun, Earth.
 - Native scroll drives a damped camera (frame-rate independent exponential smoothing) along a centripetal Catmull-Rom path through eight waypoints, with a separate look-at spline, a wider field of view in portrait, and a small pointer parallax on desktop.
-- `prefers-reduced-motion` or the Motion toggle: the camera cuts between waypoints as sections activate, the scene renders on demand only, idle animation stops, reveals are opacity only.
+- Motion and quality are fixed configuration with no visitor controls: motion runs in full and quality picks its tier automatically. Under the operating system's `prefers-reduced-motion` setting the camera cuts between waypoints as sections activate, the scene renders on demand only, idle animation stops, reveals are opacity only.
 - Quality tiers: high (DPR up to 2, MSAA under DPR 2, 1024 by 1024 near bake, 1600 boulders), medium (DPR 1.5, default for coarse pointers, low memory or few cores, 768 bake, 1000 boulders), low (DPR 1, 512 bake, 500 boulders, reduced shader relief). The first 90 frames are timed; above 20 ms average the tier drops, above 40 ms the scene switches to render-on-scroll.
 
 ## Deploy to Cloudflare

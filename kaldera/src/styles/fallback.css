@@ -38,10 +38,6 @@ html.no-webgl .scene {
   display: none;
 }
 
-html.no-webgl .sys-group[data-quality-group] {
-  opacity: 0.4;
-}
-
 /* No JS: everything is visible, nothing waits on a reveal. */
 html:not(.js) .scene,
 html:not(.js) .cue {

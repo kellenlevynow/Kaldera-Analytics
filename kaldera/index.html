@@ -107,19 +107,11 @@
         <span data-scene-status>Poster</span>
       </p>
       <div class="hud-right">
-        <div class="sys" role="group" aria-label="System settings">
-          <span class="sys-label" aria-hidden="true">Sys</span>
-          <div class="sys-group" role="group" aria-label="Motion">
-            <span class="sys-key" aria-hidden="true">Motion</span>
-            <button type="button" class="sys-opt" data-motion-opt="full" aria-pressed="true">Full</button>
-            <button type="button" class="sys-opt" data-motion-opt="reduced" aria-pressed="false">Reduced</button>
-          </div>
-          <div class="sys-group" role="group" aria-label="Quality" data-quality-group>
-            <span class="sys-key" aria-hidden="true">Quality</span>
-            <button type="button" class="sys-opt" data-quality-opt="auto" aria-pressed="true">Auto</button>
-            <button type="button" class="sys-opt" data-quality-opt="low" aria-pressed="false">Low</button>
-          </div>
-        </div>
+        <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">Menu</button>
+        <nav class="nav" id="primary-nav" aria-label="Primary">
+          <ul class="nav-list">%SITE_NAV%</ul>
+          <a class="btn nav-cta" href="#contact">Start a conversation</a>
+        </nav>
         <a class="btn hud-cta" href="#contact">Start a conversation</a>
       </div>
     </header>

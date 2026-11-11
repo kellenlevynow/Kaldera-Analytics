@@ -2,6 +2,7 @@ import './styles/index.css';
 import { site } from './site.config';
 import { motionStore, qualityStore } from './ui/motion';
 import { initHud } from './ui/hud';
+import { initNav } from './ui/nav';
 import { initReveals } from './ui/reveal';
 import type { SceneController } from './scene/types';
 
@@ -9,8 +10,10 @@ const html = document.documentElement;
 html.classList.add('js');
 if (new URLSearchParams(window.location.search).has('og')) html.classList.add('og');
 
-const hud = initHud({ motion: motionStore, quality: qualityStore, email: site.email });
+const hud = initHud({ email: site.email });
+initNav();
 const reveals = initReveals(() => motionStore.get() === 'reduced');
+// Rebuild the reveals if the operating system's motion preference changes mid-visit.
 motionStore.subscribe(() => reveals.rebuild());
 
 // Scroll progress. Keyframe k lands exactly at the top of section k, so the

@@ -1,6 +1,7 @@
 import './styles/index.css';
 import './styles/wine.css';
 import { site } from './site.config';
+import { initNav } from './ui/nav';
 import { initWineHud } from './wine/hud';
 import { initMoments } from './wine/moments';
 import type { WineSceneController } from './wine/types';
@@ -12,6 +13,7 @@ if (new URLSearchParams(window.location.search).has('og')) html.classList.add('o
 // Motion is fixed to the reduced behaviour and rendering to the low tier (data-motion in
 // wine.html, the tier in src/wine/scene.ts); the page offers no controls for either.
 const hud = initWineHud({ email: site.email });
+initNav();
 const moments = initMoments();
 
 // Scroll progress over the whole page. The descent is continuous, so progress

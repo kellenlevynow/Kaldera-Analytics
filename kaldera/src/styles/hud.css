@@ -74,47 +74,76 @@
   gap: 1.5rem;
 }
 
-.sys {
-  display: flex;
+/* Primary navigation: a quiet horizontal list beside the call to action. Items
+   come from site.navigation; below 900px they collapse behind a Menu button. */
+.nav-toggle {
+  display: none;
   align-items: center;
-  gap: 1.25rem;
-  color: var(--ink-3);
-}
-
-.sys-label {
-  color: var(--ink-2);
-}
-
-.sys-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.sys-key {
-  margin-right: 0.3rem;
-}
-
-.sys-opt {
-  position: relative;
   min-height: 1.75rem;
-  min-width: 1.75rem;
-  padding: 0.3rem 0.45rem;
-  color: var(--ink-3);
+  padding: 0.3rem 0;
+  color: var(--ink-2);
+  font-size: 0.7rem;
   letter-spacing: var(--track);
   text-transform: uppercase;
-  font-size: 0.65rem;
-  border: 1px solid transparent;
-  transition: color 0.2s linear, border-color 0.2s linear, background-color 0.2s linear;
+  transition: color 0.2s linear;
 }
 
-.sys-opt:hover {
+.nav-toggle:hover,
+.nav-toggle:focus-visible,
+.nav-toggle[aria-expanded='true'] {
   color: var(--ink);
 }
 
-.sys-opt[aria-pressed='true'] {
+.nav {
+  display: flex;
+  align-items: center;
+}
+
+.nav-list {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 0;
+  color: var(--ink-2);
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.2s linear;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.4rem;
+  height: 1px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.4s var(--ease-out);
+}
+
+.nav-link:hover,
+.nav-link:focus-visible,
+.nav-link[aria-current='page'] {
   color: var(--ink);
-  border-color: var(--hair);
+}
+
+.nav-link:hover::after,
+.nav-link:focus-visible::after,
+.nav-link[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+.nav-cta {
+  display: none;
 }
 
 .hud-cta {
@@ -122,7 +151,14 @@
   white-space: nowrap;
 }
 
-/* The status line is decorative; it yields to the controls on laptop widths. */
+/* The status line is decorative: it shrinks before the navigation does and
+   yields entirely on laptop widths. */
+.hud-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 1280px) {
   .hud-status {
     display: none;
@@ -237,12 +273,74 @@
   width: 1.6rem;
 }
 
+/* Collapsed navigation: a Menu button in the header opens a panel of hairline rows. */
 @media (max-width: 900px) {
-  .hud-status {
+  .nav-toggle {
+    display: inline-flex;
+  }
+  .nav {
+    position: fixed;
+    top: var(--hud-h);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 6;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 2rem var(--gutter) calc(var(--hud-h) + 1.5rem);
+    background: var(--bg);
+    overflow-y: auto;
+  }
+  html.nav-open .nav {
+    display: flex;
+  }
+  html.nav-open {
+    overflow: hidden;
+  }
+  html.nav-open .rail,
+  html.nav-open .cue {
     display: none;
   }
-  .sys-label {
-    display: none;
+  .nav-list {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    border-top: 1px solid var(--hair);
+  }
+  .nav-item {
+    border-bottom: 1px solid var(--hair);
+  }
+  .nav-link {
+    display: flex;
+    justify-content: space-between;
+    padding: 1.15rem 0;
+    font-size: clamp(1.05rem, 3.6vw, 1.4rem);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    white-space: normal;
+  }
+  .nav-link::after {
+    position: static;
+    width: 1.2rem;
+    height: 1px;
+    margin-left: 1.5rem;
+    align-self: center;
+    flex: none;
+    background: var(--ink-3);
+    transform: none;
+    transition: background-color 0.2s linear;
+  }
+  .nav-link:hover::after,
+  .nav-link:focus-visible::after,
+  .nav-link[aria-current='page']::after {
+    background: var(--ink);
+  }
+  .nav-cta {
+    display: inline-flex;
+    align-self: flex-start;
   }
 }
 
@@ -256,26 +354,9 @@
   .wordmark-sub {
     display: none;
   }
+  /* The call to action lives in the menu panel on phones; the header keeps the wordmark and Menu. */
   .hud-cta {
-    padding: 0.5rem 0.7rem;
-  }
-  /* SYS moves to the bottom bar on small screens. */
-  .sys {
-    position: fixed;
-    right: var(--gutter);
-    bottom: 0;
-    height: var(--hud-h);
-    gap: 0.75rem;
-  }
-  .sys-key {
     display: none;
-  }
-  .sys-group {
-    gap: 0.2rem;
-  }
-  .sys-opt {
-    padding: 0.3rem 0.35rem;
-    font-size: 0.6rem;
   }
   .active-node {
     display: none;
