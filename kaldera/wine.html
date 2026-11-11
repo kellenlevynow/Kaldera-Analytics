@@ -57,7 +57,7 @@
     <script>document.documentElement.classList.add('js')</script>
   </head>
   <body>
-    <a class="skip" href="#found">Skip to the message</a>
+    <a class="skip" href="#found" data-to-end>Skip to the message</a>
 
     <div class="poster" aria-hidden="true">
       <svg class="poster-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
@@ -180,6 +180,8 @@
     </div>
     <canvas id="scene" class="scene" aria-hidden="true"></canvas>
     <div class="vignette" aria-hidden="true"></div>
+    <div class="spot" aria-hidden="true"></div>
+    <div class="scrim" aria-hidden="true"></div>
 
     <header class="hud hud-top">
       <a class="wordmark" href="/" aria-label="Kaldera Analytics, home">
@@ -204,83 +206,108 @@
             <button type="button" class="sys-opt" data-quality-opt="low" aria-pressed="false">Low</button>
           </div>
         </div>
-        <a class="btn hud-cta" href="#found">Start a conversation</a>
+        <a class="btn hud-cta" href="#found" data-to-end>Start a conversation</a>
       </div>
     </header>
 
     <main id="main">
-      <section class="beat beat-hero reveal" id="search" data-index="0" data-node="The search" aria-labelledby="hero-title">
-        <div class="panel panel-hero">
-          <p class="eyebrow fade"><span class="idx">[ 00 ]</span>Kaldera Analytics for wine</p>
+      <!-- The text of the journey. Each moment is fixed at the centre of the screen and
+           fades with the camera's progress (data-from and data-to, as fractions of the descent). -->
+      <div class="stage">
+        <section class="moment moment-hero" data-from="-1" data-to="0.03" data-scrim="0.55" aria-labelledby="hero-title">
+          <p class="eyebrow"><span class="idx">[ 00 ]</span>Kaldera Analytics for the wine trade</p>
           <h1 class="display display-h1" id="hero-title">
-            <span class="line"><span class="line-inner">Somewhere</span></span>
-            <span class="line"><span class="line-inner">in here is</span></span>
-            <span class="line"><span class="line-inner">the one.</span></span>
+            <span>Somewhere</span>
+            <span>in here is</span>
+            <span>the one.</span>
           </h1>
-          <p class="dek fade">For wineries, vineyards and estates, wine bars, storage facilities, private collections and the people who run wine country tours. Scroll to start looking.</p>
-        </div>
-        <a class="cue fade" href="#depth-1" data-cue>
-          <span class="cue-text">Scroll to search</span>
-          <span class="cue-line" aria-hidden="true"></span>
-        </a>
-      </section>
+          <p class="moment-sub">Scroll to start digging.</p>
+        </section>
 
-      <section class="beat beat-depth" id="depth-1" data-index="1" data-node="Descent" aria-label="Descent, first layer"></section>
+        <section class="moment" data-scrim="0.82" data-from="0.05" data-to="0.105">
+          <p class="moment-line">More good wine is being made than at any point in history.</p>
+          <p class="moment-sub">Almost none of it is easy to find.</p>
+        </section>
 
-      <section class="beat beat-depth" id="depth-2" data-index="2" data-node="Descent" aria-labelledby="t-caption-1">
-        <p class="caption caption-left" data-caption>
-          <span class="caption-rule" aria-hidden="true"></span>
-          <span class="caption-text" id="t-caption-1">Every bottle in here is good.</span>
-        </p>
-      </section>
+        <section class="moment" data-scrim="0.82" data-from="0.125" data-to="0.18">
+          <p class="moment-line">The drinkers who bought by habit are buying less.</p>
+          <p class="moment-sub">The ones coming up behind them never formed the habit.</p>
+        </section>
 
-      <section class="beat beat-depth" id="depth-3" data-index="3" data-node="Descent" aria-label="Descent, third layer"></section>
+        <section class="moment" data-scrim="0.82" data-from="0.2" data-to="0.255">
+          <p class="moment-line">They are not indifferent. They are curious.</p>
+          <p class="moment-sub">Fewer bottles, better ones, and a reason for each.</p>
+        </section>
 
-      <section class="beat beat-depth" id="depth-4" data-index="4" data-node="Descent" aria-labelledby="t-caption-2">
-        <p class="caption caption-right" data-caption>
-          <span class="caption-rule" aria-hidden="true"></span>
-          <span class="caption-text" id="t-caption-2">Being good is not the same as being found.</span>
-        </p>
-      </section>
+        <section class="moment" data-scrim="0.82" data-from="0.275" data-to="0.33">
+          <p class="moment-line">So last year's sales stop predicting next year's.</p>
+          <p class="moment-sub">A club that grew on its own for twenty years now has to be earned every quarter.</p>
+        </section>
 
-      <section class="beat beat-depth" id="depth-5" data-index="5" data-node="Descent" aria-label="Descent, fifth layer"></section>
+        <section class="moment" data-scrim="0.82" data-from="0.35" data-to="0.405">
+          <p class="moment-line">An exceptional bottle is the price of entry.</p>
+          <p class="moment-sub">It is not the reason anyone finds you.</p>
+        </section>
 
-      <section class="beat beat-close beat-found reveal" id="found" data-index="6" data-node="Found" data-reveal-start="top 58%" aria-labelledby="t-found">
-        <div class="panel panel-close panel-found">
-          <p class="eyebrow fade"><span class="idx">[ 01 ]</span>Found</p>
-          <h2 class="display display-h2" id="t-found">
-            <span class="line"><span class="line-inner">Find exactly what</span></span>
-            <span class="line"><span class="line-inner">you're looking for.</span></span>
-            <span class="line"><span class="line-inner">Build what</span></span>
-            <span class="line"><span class="line-inner">doesn't exist yet.</span></span>
+        <section class="moment" data-scrim="0.82" data-from="0.425" data-to="0.48">
+          <p class="moment-line">What travels is what cannot be copied.</p>
+          <p class="moment-sub">The slope. The family. The frost in the third week of April. The hands at the sorting table.</p>
+        </section>
+
+        <section class="moment" data-scrim="0.82" data-from="0.5" data-to="0.555">
+          <p class="moment-line">Not everyone is looking for the same bottle.</p>
+          <p class="moment-sub">The collector, the weeknight cook, the couple planning a first trip to the valley. Each is searching for something specific.</p>
+        </section>
+
+        <section class="moment" data-scrim="0.82" data-from="0.575" data-to="0.63">
+          <p class="moment-line">Demand is built long before the purchase.</p>
+          <p class="moment-sub">In the first pour at a tasting bar. In a story worth retelling. In an afternoon among the rows.</p>
+        </section>
+
+        <section class="moment" data-scrim="0.82" data-from="0.65" data-to="0.705">
+          <p class="moment-line">The first bottle is an introduction.</p>
+          <p class="moment-sub">The relationship is the release they wait for, the letter they open first, the table they bring friends to.</p>
+        </section>
+
+        <section class="moment" data-scrim="0.82" data-from="0.725" data-to="0.78">
+          <p class="moment-line">Tasting room, distributor, wine list, website, club.</p>
+          <p class="moment-sub">To the person holding the glass it is one winery. It should feel like one.</p>
+        </section>
+
+        <!-- From here the camera slows and the pile opens. The bottle is left alone on screen before the message. -->
+
+        <section class="moment moment-message" data-from="0.915" data-to="0.955" data-scrim="1" aria-labelledby="t-message">
+          <h2 class="display moment-display" id="t-message">
+            <span>Find exactly what you're looking for.</span>
+            <span>Build what doesn't exist yet.</span>
           </h2>
-          <p class="dek fade">We help wine businesses uncover opportunities, create the right experiences, and build the systems that connect customers with exactly what they need. Not just finding the bottle in the pile: making it, building the demand for it, and making sure the right person finds it.</p>
-          <dl class="spec">
-            <div class="spec-row fade"><dt>Find</dt><dd>Who is looking for you, where they look, and what they expect to see</dd></div>
-            <div class="spec-row fade"><dt>Create</dt><dd>Allocations, memberships, tastings, tours and releases people remember</dd></div>
-            <div class="spec-row fade"><dt>Build</dt><dd>The marketing and revenue systems that put the right bottle in the right hands</dd></div>
-          </dl>
-          <ul class="hero-meta label fade" aria-label="Who this is for">
-            <li><span>For</span><span>Wineries, vineyards and estates</span></li>
-            <li><span>For</span><span>Wine bars and merchants</span></li>
-            <li><span>For</span><span>Storage facilities and private vaults</span></li>
-            <li><span>For</span><span>Wine country tour operators</span></li>
-          </ul>
-          <div class="channel fade">
+        </section>
+
+        <section class="moment moment-close" id="found" data-from="0.968" data-to="2" data-scrim="1" aria-labelledby="t-close">
+          <p class="eyebrow" id="t-close"><span class="idx">[ 01 ]</span>Kaldera Analytics</p>
+          <p class="moment-sub moment-close-text">We work with wineries, vineyards and estates, wine bars, storage facilities, private collections and the people who guide others through wine country. We help make the bottle, build the demand for it, and make sure the right person finds it.</p>
+          <div class="channel">
             <a class="channel-email link" href="mailto:%SITE_EMAIL%" data-site-email>%SITE_EMAIL%</a>
             <button type="button" class="btn btn-copy" data-copy-email>Copy</button>
           </div>
-          <p class="colophon fade">Kaldera Analytics. Boise, Idaho. Marketing and revenue systems. <a href="/">Studio</a><a href="/privacy">Privacy</a></p>
-        </div>
-      </section>
+          <p class="colophon">Boise, Idaho. Marketing and revenue systems. <a href="/">Studio</a><a href="/privacy">Privacy</a></p>
+        </section>
+      </div>
+
+      <div class="cue" data-cue aria-hidden="true">
+        <span class="cue-text">Scroll</span>
+        <span class="cue-line"></span>
+      </div>
+
+      <!-- Scroll length for the descent: 27 screens. -->
+      <div class="journey" aria-hidden="true"></div>
     </main>
 
     <footer class="hud hud-bottom">
       <div class="telemetry" aria-hidden="true">
         <div class="tele"><span class="tele-key">Depth</span><span class="tele-val" data-tele="depth">0.00 m</span></div>
         <div class="tele"><span class="tele-key">Bottles</span><span class="tele-val" data-tele="bottles">0</span></div>
-        <div class="tele"><span class="tele-key">Hdg</span><span class="tele-val" data-tele="hdg">000°</span></div>
-        <div class="tele"><span class="tele-key">Status</span><span class="tele-val" data-tele="status">Searching</span></div>
+        <div class="tele"><span class="tele-key">Layer</span><span class="tele-val" data-tele="layer">01 The shelf</span></div>
       </div>
       <p class="active-node"><span class="tele-key">Found</span><span data-found-count>0 / 1</span></p>
       <div class="traverse" aria-hidden="true"><div class="traverse-bar" data-progress></div></div>

@@ -1,152 +1,221 @@
-/* The wine page: one continuous descent. No rail, captions over the scene, the reveal panel at the floor. */
-html[data-page='wine'] .beat {
-  padding-right: var(--gutter);
+/* The wine page: one continuous descent. The text does not scroll; each moment
+   sits at the centre of the screen and fades with the camera's progress. */
+.journey {
+  height: 2700vh;
+  height: 2700svh;
 }
 
-.beat-depth {
-  min-height: 100vh;
-  min-height: 100svh;
-  display: block;
-  padding: 0;
-}
-
-/* Captions: a hairline and one short line, scrubbed in and out by scroll. */
-.caption {
-  position: absolute;
-  top: 50%;
-  display: grid;
-  gap: 0.9rem;
-  max-width: 22rem;
-  transform: translateY(-50%);
-  font-size: clamp(0.95rem, 1.5vw, 1.35rem);
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  line-height: 1.35;
-  color: var(--ink);
-  text-wrap: balance;
-  opacity: 0;
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
   pointer-events: none;
 }
 
-.caption-left {
-  left: var(--gutter);
+.moment {
+  position: absolute;
+  inset: calc(var(--hud-h) + 1rem) var(--gutter);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.15rem;
+  text-align: center;
+  opacity: 0;
+  transform: translate3d(0, var(--shift, 0px), 0);
+  will-change: opacity, transform;
 }
 
-.caption-right {
-  right: var(--gutter);
-  justify-items: end;
-  text-align: right;
+.moment.is-live {
+  pointer-events: auto;
 }
 
-.caption-rule {
+.moment-line {
+  max-width: 23em;
+  font-size: clamp(1.25rem, 2.35vw, 2.15rem);
+  font-weight: 500;
+  line-height: 1.28;
+  letter-spacing: 0.012em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.moment-sub {
+  max-width: 33em;
+  font-size: clamp(0.98rem, 1.4vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1.55;
+  color: #d6d6d6;
+  text-wrap: balance;
+}
+
+.moment-line,
+.moment-sub,
+.moment .display,
+.moment .eyebrow {
+  text-shadow: 0 0 22px rgba(0, 0, 0, 0.75), 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.moment .display span {
   display: block;
-  width: 3rem;
-  height: 1px;
-  background: var(--ink);
 }
 
-.caption-text {
-  text-shadow: 0 0 24px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.9);
+.moment-hero {
+  gap: 1.6rem;
 }
 
-html:not(.js) .caption {
-  opacity: 1;
+.moment-hero .eyebrow,
+.moment-close .eyebrow {
+  margin: 0;
 }
 
-/* The reveal panel sits on the left; the camera frames the bottle on the right. */
-.panel-found {
-  grid-column: 1 / span 5;
+.moment-display {
+  font-size: clamp(1.5rem, 3.5vw, 3.1rem);
+  letter-spacing: 0.05em;
+  line-height: 1.14;
 }
 
-.panel-found .hero-meta {
-  margin-top: 1.75rem;
-  flex-direction: column;
-  gap: 0.45rem;
+.moment-display span + span {
+  margin-top: 0.35em;
+  color: #d6d6d6;
 }
 
-.panel-found .dek {
-  font-size: 1rem;
+.moment-close {
+  gap: 1.5rem;
 }
 
-.panel-found .display-h2 {
-  font-size: clamp(1.3rem, 2.3vw, 2rem);
+.moment-close .channel {
+  justify-content: center;
+  margin-top: 0.25rem;
 }
 
-.panel-found .spec {
-  margin-top: 1.5rem;
+.moment-close .colophon {
+  margin-top: 0.5rem;
 }
 
-.panel-found .channel {
-  margin-top: 1.5rem;
+/* The page opens on the headline; it lifts in once, then scroll takes over. */
+.js .moment-hero > * {
+  animation: moment-in 1.4s var(--ease-out) both;
 }
 
-.panel-found .colophon {
-  margin-top: 1.75rem;
+.js .moment-hero > :nth-child(2) {
+  animation-delay: 0.12s;
 }
 
-.beat-found {
-  min-height: 100vh;
-  min-height: 100svh;
+.js .moment-hero > :nth-child(3) {
+  animation-delay: 0.5s;
 }
 
-/* Settling readout: the HUD status reads the pile while the physics settles. */
+@keyframes moment-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A soft pool of shade behind whichever moment is showing, so the type reads
+   over bright labels without boxing it in. Opacity follows the text. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse 62% 48% at 50% 50%, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0.64) 42%, rgba(0, 0, 0, 0.2) 74%, rgba(0, 0, 0, 0) 100%);
+  will-change: opacity;
+}
+
+/* At the reveal the frame falls away around the bottle: a tall pool of light, dark beyond it. */
+.spot {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse 24% 58% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.46) 78%, rgba(0, 0, 0, 0.76) 100%);
+  will-change: opacity;
+}
+
+html[data-page='wine'] .cue {
+  position: fixed;
+  z-index: 3;
+  pointer-events: none;
+}
+
 .hud-status [data-scene-status] {
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 1100px) {
-  .panel-found {
-    grid-column: 1 / span 7;
-  }
+html[data-motion='reduced'] .moment {
+  transform: none;
+}
+
+html[data-motion='reduced'] .moment-hero > * {
+  animation: none;
+}
+
+/* No JS: the moments read as an ordinary page. */
+html:not(.js) .journey,
+html:not(.js) .cue,
+html:not(.js) .spot,
+html:not(.js) .scrim,
+html.no-webgl .spot {
+  display: none;
+}
+
+html:not(.js) .stage {
+  position: static;
+  padding: calc(var(--hud-h) + 2rem) 0;
+}
+
+html:not(.js) .moment {
+  position: static;
+  opacity: 1;
+  padding: 3.5rem var(--gutter);
+  pointer-events: auto;
+}
+
+html.og .moment,
+html.og .spot,
+html.og .scrim {
+  display: none;
 }
 
 @media (max-width: 760px) {
-  .caption {
-    top: auto;
-    bottom: 28%;
-    max-width: 16rem;
-    transform: none;
+  .moment {
+    gap: 0.95rem;
   }
-  .panel-found,
-  .beat-found .panel-close {
-    grid-column: 1 / -1;
+  .moment-line {
+    font-size: 1.3rem;
   }
-  .panel-found .dek {
-    font-size: 0.92rem;
+  .moment-sub {
+    font-size: 0.98rem;
   }
-  .panel-found .hero-meta {
-    display: none;
+  .moment-display {
+    font-size: 1.55rem;
   }
-  .beat-found {
-    align-items: end;
+  .scrim {
+    background: radial-gradient(ellipse 110% 46% at 50% 50%, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0.66) 45%, rgba(0, 0, 0, 0.2) 78%, rgba(0, 0, 0, 0) 100%);
   }
-  .beat-found .spec-row {
-    grid-template-columns: 4.5rem 1fr;
+  .spot {
+    background: radial-gradient(ellipse 58% 44% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.46) 78%, rgba(0, 0, 0, 0.76) 100%);
   }
-  .panel-found .dek {
-    font-size: 0.88rem;
-    line-height: 1.5;
-  }
-  .panel-found .colophon {
-    display: none;
-  }
-  .panel-found .channel {
-    margin-top: 1.25rem;
+  html[data-page='wine'] .cue {
+    display: grid;
   }
 }
 
-@media (max-height: 940px) and (min-width: 761px) {
-  .panel-found .hero-meta {
+@media print {
+  .journey,
+  .scrim {
     display: none;
   }
-}
-
-@media (max-height: 760px) and (min-width: 761px) {
-  .panel-found .dek {
-    font-size: 0.9rem;
-  }
-  .panel-found .colophon {
-    display: none;
+  .stage,
+  .moment {
+    position: static;
+    opacity: 1;
   }
 }

@@ -4,7 +4,7 @@ import type { QualityTier } from '../scene/types';
 export interface WineTelemetry {
   depth: number; // metres below the starting eye position
   bottles: number; // bottles within reach of the camera
-  hdg: number; // camera heading in degrees
+  layer: string; // the stratum of the pile the camera is in
   found: boolean;
 }
 
@@ -13,7 +13,8 @@ export interface WineSceneOptions {
   motion: Store<MotionMode>;
   quality: Store<QualityMode>;
   onOnline(): void;
-  onSettling(fraction: number): void;
+  // The camera's own progress through the journey, each frame. It trails the scroll position.
+  onProgress(progress: number): void;
   onTelemetry(telemetry: WineTelemetry): void;
   onTier(tier: QualityTier, staticMode: boolean): void;
   initialProgress?: number;
@@ -22,6 +23,10 @@ export interface WineSceneOptions {
 export interface WineDiagnostics {
   tier: QualityTier;
   bottles: number;
+  visible: number;
+  awake: number;
+  live: number;
+  progress: number;
   drawCalls: number;
   triangles: number;
   pixelRatio: number;

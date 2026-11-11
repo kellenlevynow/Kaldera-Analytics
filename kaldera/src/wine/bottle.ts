@@ -34,17 +34,20 @@ export interface BottleGeometry {
   capsule: BufferGeometry;
 }
 
+// Two capsules: the body, and the neck reaching down over the shoulder. A third
+// shape for the shoulder itself costs the solver nearly as much again for a few
+// millimetres of glass.
 function colliders(s: Omit<BottleShape, 'colliders' | 'volume' | 'origin'>, origin: number): ColliderSpec[] {
+  const span = s.shoulderEnd - s.shoulderStart;
   const bodyBottom = 0.004;
-  const bodyTop = s.shoulderStart + (s.shoulderEnd - s.shoulderStart) * 0.4;
+  const bodyTop = s.shoulderStart + span * 0.4;
   const bodyR = s.bodyR;
   const neckR = s.neckR + 0.0035;
-  const neckBottom = s.shoulderEnd - 0.012;
+  const neckBottom = s.shoulderStart + span * 0.3;
   const neckTop = s.height;
   return [
     { kind: 'capsule', y: (bodyBottom + bodyTop) / 2 - origin, halfHeight: Math.max(0.005, (bodyTop - bodyBottom) / 2 - bodyR), radius: bodyR },
-    { kind: 'capsule', y: (neckBottom + neckTop) / 2 - origin, halfHeight: Math.max(0.005, (neckTop - neckBottom) / 2 - neckR), radius: neckR },
-    { kind: 'ball', y: (s.shoulderStart + s.shoulderEnd) / 2 - origin, halfHeight: 0, radius: (bodyR + neckR) * 0.5 }
+    { kind: 'capsule', y: (neckBottom + neckTop) / 2 - origin, halfHeight: Math.max(0.005, (neckTop - neckBottom) / 2 - neckR), radius: neckR }
   ];
 }
 

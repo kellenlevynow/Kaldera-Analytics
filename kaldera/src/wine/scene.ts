@@ -1,23 +1,19 @@
-// The search: a scroll-driven descent through a physics pile of bottles, ending
-// on one. Renderer, lights, instanced bottles, the camera path, the probe that
-// displaces the pile, depth of field on capable machines, quality tiers and
-// reduced-motion behaviour.
+// The search: a scroll-driven descent, straight down, through a deep physics
+// pile of bottles, ending on one. Renderer, lights, instanced bottles culled to
+// the camera's view, the camera path, the probe that displaces the pile, depth
+// of field on capable machines, quality tiers and reduced-motion behaviour.
 import gsap from 'gsap';
 import {
   ACESFilmicToneMapping,
-  AdditiveBlending,
-  BackSide,
   CircleGeometry,
   Color,
-  ConeGeometry,
-  CylinderGeometry,
+  DynamicDrawUsage,
   FogExp2,
   Group,
   HalfFloatType,
   HemisphereLight,
   InstancedBufferAttribute,
   InstancedMesh,
-  Matrix4,
   Mesh,
   MeshLambertMaterial,
   PCFShadowMap,
@@ -25,7 +21,6 @@ import {
   PointLight,
   Quaternion,
   Scene,
-  ShaderMaterial,
   SpotLight,
   SRGBColorSpace,
   Vector3,
@@ -39,47 +34,51 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { QualityTier } from '../scene/types';
 import { FrameMonitor, detectTier } from '../scene/quality';
 import { SHAPES, SHAPE_NAMES, buildBottleGeometry, type BottleGeometry } from './bottle';
-import { LABEL_COUNT, buildHeroLabel, buildLabelAtlas, mulberry, tileRect } from './labels';
-import { FOIL_COLORS, GLASS_COLORS, buildEnvironment, buildRoughnessMap, createFoilMaterial, createGlassMaterial, createHeroMaterials, createLabelMaterial, pickWeighted } from './materials';
+import { STRATA, buildHeroLabel, buildLabelAtlas, loadLabelFonts, tileRect } from './labels';
+import { HERO_QUAT, PROBE_DROP, PROBE_HALF, PROBE_RADIUS, flatLayer, heroPosition, mulberry, parsePile } from './layout';
+import { FOIL_STRATA, GLASS_STRATA, LABEL_TINT, buildEnvironment, buildHeroEnvironment, buildRoughnessMap, createFoilMaterial, createGlassMaterial, createHeroMaterials, createLabelMaterial, pickWeighted } from './materials';
 import { Pile } from './physics';
+import { loadRapier } from './rapier';
+import pileUrl from './pile.bin?url';
 import type { WineDiagnostics, WineSceneController, WineSceneOptions } from './types';
 
 interface WineTier {
   tier: QualityTier;
   dpr: number;
-  count: number;
-  wellRadius: number;
   segments: number;
   shadows: boolean;
   dof: boolean;
   msaa: number;
+  // How far below the camera bottles are drawn, and the fog that hides the cut.
+  reach: number;
+  fog: number;
 }
 
 function wineConfig(tier: QualityTier, deviceDpr: number): WineTier {
   switch (tier) {
     case 'high': {
       const dpr = Math.min(deviceDpr, 2);
-      return { tier, dpr, count: 900, wellRadius: 0.95, segments: 40, shadows: true, dof: true, msaa: dpr < 2 ? 4 : 2 };
+      return { tier, dpr, segments: 30, shadows: true, dof: true, msaa: dpr < 2 ? 4 : 2, reach: 1.4, fog: 0.97 };
     }
     case 'medium':
-      return { tier, dpr: Math.min(deviceDpr, 1.5), count: 560, wellRadius: 0.8, segments: 28, shadows: false, dof: false, msaa: 0 };
+      return { tier, dpr: Math.min(deviceDpr, 1.5), segments: 24, shadows: false, dof: false, msaa: 0, reach: 1.25, fog: 1.08 };
     case 'low':
     default:
-      return { tier: 'low', dpr: 1, count: 360, wellRadius: 0.68, segments: 20, shadows: false, dof: false, msaa: 0 };
+      return { tier: 'low', dpr: 1, segments: 16, shadows: false, dof: false, msaa: 0, reach: 1.05, fog: 1.28 };
   }
 }
 
-const DESCENT_END = 0.78;
-const REVEAL_END = 0.92;
-const START_ABOVE = 0.72;
-const THETA0 = 0.6;
-const THETA_SWEEP = 2.4;
-const HERO_POINT = new Vector3(0, 0.13, 0);
-const HERO_DISTANCE_MAX = 0.72;
-const HERO_EYE = 0.34;
-const PROBE_RADIUS = 0.33;
-const PROBE_HALF = 0.2;
-const CLEAR_RADIUS = 0.56;
+// The journey, in scroll progress. The descent is linear to P_SLOW, eases to a
+// stop over the hero at P_FLOOR, and the rest is the reveal.
+const P_SLOW = 0.74;
+const P_FLOOR = 0.86;
+// Camera height over the floor when it arrives, and how far it leans in afterwards.
+const HERO_EYE = 0.52;
+const PUSH_IN = 0.05;
+// Fastest the camera will chase the scroll position, in progress per second.
+// The probe is a physical thing; it may not teleport through the pile.
+const CHASE = 0.11;
+const CHASE_MAX = 0.4;
 
 const smoothstep = (t: number) => {
   const x = Math.min(1, Math.max(0, t));
@@ -87,39 +86,45 @@ const smoothstep = (t: number) => {
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-interface Pose {
-  pos: Vector3;
-  look: Vector3;
-  up: Vector3;
-  fov: number;
-  theta: number;
-}
-
 interface BottleSet {
   glass: InstancedMesh;
   label: InstancedMesh;
   foil: InstancedMesh;
   geometry: BottleGeometry;
+  tiles: InstancedBufferAttribute;
+  attributes: InstancedBufferAttribute[];
 }
 
-const shaftVertex = /* glsl */ `
-varying vec2 vUv;
-varying float vRim;
-void main() {
-  vUv = uv;
-  vec3 n = normalize(normalMatrix * normal);
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vRim = abs(dot(n, normalize(-mv.xyz)));
-  gl_Position = projectionMatrix * mv;
-}`;
-const shaftFragment = /* glsl */ `
-uniform float uOpacity;
-varying vec2 vUv;
-varying float vRim;
-void main() {
-  float a = uOpacity * pow(vUv.y, 1.1) * (0.15 + 0.85 * vRim * vRim);
-  gl_FragColor = vec4(vec3(0.82, 0.86, 1.0) * a, a);
-}`;
+function writeMatrix(a: Float32Array, o: number, px: number, py: number, pz: number, x: number, y: number, z: number, w: number): void {
+  const x2 = x + x;
+  const y2 = y + y;
+  const z2 = z + z;
+  const xx = x * x2;
+  const xy = x * y2;
+  const xz = x * z2;
+  const yy = y * y2;
+  const yz = y * z2;
+  const zz = z * z2;
+  const wx = w * x2;
+  const wy = w * y2;
+  const wz = w * z2;
+  a[o] = 1 - (yy + zz);
+  a[o + 1] = xy + wz;
+  a[o + 2] = xz - wy;
+  a[o + 3] = 0;
+  a[o + 4] = xy - wz;
+  a[o + 5] = 1 - (xx + zz);
+  a[o + 6] = yz + wx;
+  a[o + 7] = 0;
+  a[o + 8] = xz + wy;
+  a[o + 9] = yz - wx;
+  a[o + 10] = 1 - (xx + yy);
+  a[o + 11] = 0;
+  a[o + 12] = px;
+  a[o + 13] = py;
+  a[o + 14] = pz;
+  a[o + 15] = 1;
+}
 
 export async function createWineScene(options: WineSceneOptions): Promise<WineSceneController> {
   const { canvas } = options;
@@ -129,12 +134,13 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   const forced = params.get('tier');
   let tier: QualityTier = forced === 'high' || forced === 'medium' || forced === 'low' ? forced : options.quality.get() === 'low' ? 'low' : detectTier();
   const config = wineConfig(tier, deviceDpr);
-  // ?count=N overrides the bottle count for inspection in slow test browsers.
-  const countOverride = Number(params.get('count'));
-  if (params.has('debug') && countOverride > 0) config.count = Math.round(countOverride);
   let dpr = config.dpr;
   let shadows = config.shadows;
   let dof = config.dof;
+
+  // The baked pile, the physics engine and the label faces load together.
+  const [pileBuffer] = await Promise.all([fetch(pileUrl).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`Pile failed to load: ${r.status}`)))), loadRapier().then((rapier) => Pile.use(rapier)), loadLabelFonts()]);
+  const baked = parsePile(pileBuffer);
 
   const renderer = new WebGLRenderer({ canvas, antialias: !dof && dpr < 2, powerPreference: 'high-performance', alpha: false, stencil: false });
   renderer.setPixelRatio(dpr);
@@ -149,73 +155,79 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
 
   const scene = new Scene();
   scene.background = new Color(0x020202);
-  scene.fog = new FogExp2(0x030202, 0.5);
+  scene.fog = new FogExp2(0x020202, config.fog);
   scene.environment = buildEnvironment(renderer);
 
-  // The final camera stays inside the well; its field of view keeps the hero the same size.
-  const HERO_DISTANCE = Math.min(HERO_DISTANCE_MAX, config.wellRadius - 0.14);
-  const HERO_FOV = (2 * Math.atan(0.262 / HERO_DISTANCE) * 180) / Math.PI;
-  const camera = new PerspectiveCamera(50, 1, 0.04, 30);
-  camera.position.set(0, 4, 0);
+  const camera = new PerspectiveCamera(46, 1, 0.04, 12);
 
-  // Lights: a faint cellar ambient, a lamp that travels with the camera, and
-  // one shaft from above on the hero that the pile hides until the reveal.
+  // Lights: a faint ambient, a warm lamp that travels with the camera, and a
+  // cool key that comes up over the hero at the reveal.
   scene.add(new HemisphereLight(0x5c6275, 0x1a100a, 0.06));
-  const lamp = new PointLight(0xffe2c8, 2.2, 7, 2);
+  const lamp = new PointLight(0xffe2c8, 2.2, 6, 2);
   scene.add(lamp);
-  const spot = new SpotLight(0xe6ecff, 150, 10, 0.24, 0.8, 1.7);
-  spot.position.set(0.35, 4.2, -0.25);
-  spot.target.position.copy(HERO_POINT);
-  spot.castShadow = shadows;
-  spot.shadow.mapSize.set(1024, 1024);
-  spot.shadow.bias = -0.0004;
-  spot.shadow.normalBias = 0.012;
-  spot.shadow.camera.near = 1;
-  spot.shadow.camera.far = 8;
-  scene.add(spot, spot.target);
+  const key = new SpotLight(0xf3f6ff, 0, 4, 0.33, 1, 1.6);
+  key.castShadow = shadows;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.bias = -0.0005;
+  key.shadow.normalBias = 0.01;
+  key.shadow.camera.near = 0.1;
+  key.shadow.camera.far = 2;
+  scene.add(key, key.target);
 
-  // Floor and the well wall, dark and matte.
-  const floor = new Mesh(new CircleGeometry(config.wellRadius + 0.7, 64), new MeshLambertMaterial({ color: 0x030303 }));
+  // Ground under everything, black. Layers of bottles sit between it and the bed.
+  const floor = new Mesh(new CircleGeometry(baked.wellRadius + 0.4, 48), new MeshLambertMaterial({ color: 0x020202 }));
   floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
+  floor.position.y = -0.2;
   scene.add(floor);
-  const wall = new Mesh(new CylinderGeometry(config.wellRadius + 0.1, config.wellRadius + 0.1, 8, 48, 1, true), new MeshLambertMaterial({ color: 0x020202, side: BackSide }));
-  wall.position.y = 3.9;
-  scene.add(wall);
 
-  // The light shaft, additive, faded in for the reveal.
-  const shaftMaterial = new ShaderMaterial({ uniforms: { uOpacity: { value: 0 } }, vertexShader: shaftVertex, fragmentShader: shaftFragment, transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false });
-  const shaftLength = spot.position.distanceTo(new Vector3(0, 0, 0));
-  const shaft = new Mesh(new ConeGeometry(0.62, shaftLength, 40, 1, true), shaftMaterial);
-  shaft.position.copy(spot.position).add(new Vector3(0, 0, 0)).multiplyScalar(0.5);
-  shaft.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), spot.position.clone().normalize());
-  shaft.visible = false;
-  scene.add(shaft);
-
-  // Bottles: shapes, colours and labels assigned up front, deterministic.
-  const rnd = mulberry(1979);
+  // Every bottle: the baked bed and pile (physics bodies), then two static
+  // layers under the floor line. Shape, glass, foil, label and paper tint are
+  // fixed up front, by stratum of the settled pile.
   const shapes = SHAPE_NAMES.map((name) => SHAPES[name]);
-  const shapeWeights = [0.45, 0.35, 0.2];
-  const dynamicCount = config.count;
-  const bedCount = Math.round(config.wellRadius * config.wellRadius * 230);
-  const count = dynamicCount + bedCount; // bodies: the bed first, then the pile
-  const shapeOf = new Uint8Array(count);
-  const localIndex = new Uint16Array(count);
-  const perShape = [0, 0, 0];
-  for (let i = 0; i < count; i++) {
-    const r = rnd();
-    let s = 0;
-    let acc = 0;
-    for (let k = 0; k < shapeWeights.length; k++) {
-      acc += shapeWeights[k] ?? 0;
-      if (r <= acc) {
-        s = k;
-        break;
-      }
+  const bodyCount = baked.bedCount + baked.dynamicCount;
+  const under = [-0.043, -0.121].flatMap((y, k) =>
+    flatLayer(
+      mulberry(90 + k),
+      baked.wellRadius - 0.02,
+      shapes.map((s) => s.height),
+      shapes.map((s) => s.bodyR),
+      [0.5, 0.33, 0.17],
+      Math.round(baked.wellRadius * baked.wellRadius * 240)
+    ).map((bottle) => ({ ...bottle, y }))
+  );
+  const total = bodyCount + under.length;
+  const shapeOf = new Uint8Array(total);
+  shapeOf.set(baked.shapes);
+  const underPoses = new Float32Array(under.length * 7);
+  {
+    const yawQ = new Quaternion();
+    const layQ = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2);
+    const rollQ = new Quaternion();
+    const up = new Vector3(0, 1, 0);
+    under.forEach((bottle, k) => {
+      const shape = shapes[bottle.shape]!;
+      shapeOf[bodyCount + k] = bottle.shape;
+      const centre = shape.origin - shape.height / 2;
+      yawQ.setFromAxisAngle(up, -bottle.yaw).multiply(layQ).multiply(rollQ.setFromAxisAngle(up, bottle.roll));
+      underPoses.set([bottle.x + Math.cos(bottle.yaw) * centre, bottle.y, bottle.z + Math.sin(bottle.yaw) * centre, yawQ.x, yawQ.y, yawQ.z, yawQ.w], k * 7);
+    });
+  }
+
+  const look = new Float32Array(total * 13); // glass rgb, foil rgb, tint rgb, tile xyzw
+  {
+    const rnd = mulberry(1979);
+    const bounds = [0.74, 0.5, 0.26]; // fractions of the pile's height where the strata change
+    for (let i = 0; i < total; i++) {
+      const y = i < bodyCount ? baked.poses[i * 7 + 1]! : 0;
+      const f = y / baked.pileTop + (rnd() - 0.5) * 0.07;
+      const stratum = f > bounds[0]! ? 0 : f > bounds[1]! ? 1 : f > bounds[2]! ? 2 : 3;
+      const glass = pickWeighted(GLASS_STRATA[stratum]!, rnd());
+      const foil = pickWeighted(FOIL_STRATA[stratum]!, rnd());
+      const tint = LABEL_TINT[stratum]!;
+      const span = STRATA[stratum]!;
+      const tile = tileRect(span.start + Math.floor(rnd() * span.count));
+      look.set([glass.r, glass.g, glass.b, foil.r, foil.g, foil.b, tint.r, tint.g, tint.b, tile[0], tile[1], tile[2], tile[3]], i * 13);
     }
-    shapeOf[i] = s;
-    localIndex[i] = perShape[s] ?? 0;
-    perShape[s] = (perShape[s] ?? 0) + 1;
   }
 
   const roughnessMap = buildRoughnessMap();
@@ -224,147 +236,53 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   const glassMaterial = createGlassMaterial(roughnessMap);
   const labelMaterial = createLabelMaterial(atlas);
   const foilMaterial = createFoilMaterial();
+  const capacity = [0, 0, 0];
+  for (let i = 0; i < total; i++) capacity[shapeOf[i]!]!++;
   const sets: BottleSet[] = shapes.map((shape, s) => {
-    const n = Math.max(1, perShape[s] ?? 1);
+    const n = Math.max(1, capacity[s]!);
     const geometry = buildBottleGeometry(shape, config.segments);
     const glass = new InstancedMesh(geometry.glass, glassMaterial, n);
     const label = new InstancedMesh(geometry.label, labelMaterial, n);
     const foil = new InstancedMesh(geometry.capsule, foilMaterial, n);
-    const tiles = new Float32Array(n * 4);
-    geometry.label.setAttribute('aTile', new InstancedBufferAttribute(tiles, 4));
+    const tiles = new InstancedBufferAttribute(new Float32Array(n * 4), 4);
+    geometry.label.setAttribute('aTile', tiles);
+    const attributes = [tiles];
     for (const mesh of [glass, label, foil]) {
       mesh.frustumCulled = false;
-      mesh.castShadow = shadows;
+      mesh.castShadow = shadows && mesh !== label;
       mesh.receiveShadow = shadows;
+      mesh.count = 0;
+      mesh.instanceColor = new InstancedBufferAttribute(new Float32Array(n * 3), 3);
+      attributes.push(mesh.instanceMatrix, mesh.instanceColor);
     }
-    label.castShadow = false;
-    return { glass, label, foil, geometry };
+    for (const attribute of attributes) attribute.setUsage(DynamicDrawUsage);
+    scene.add(glass, label, foil);
+    return { glass, label, foil, geometry, tiles, attributes };
   });
-  const hidden = new Matrix4().makeScale(0, 0, 0);
-  for (let i = 0; i < count; i++) {
-    const set = sets[shapeOf[i] ?? 0]!;
-    const j = localIndex[i] ?? 0;
-    set.glass.setColorAt(j, pickWeighted(GLASS_COLORS, rnd()));
-    set.foil.setColorAt(j, pickWeighted(FOIL_COLORS, rnd()));
-    const tile = tileRect(Math.floor(rnd() * LABEL_COUNT));
-    const attr = set.geometry.label.getAttribute('aTile') as InstancedBufferAttribute;
-    attr.setXYZW(j, tile[0], tile[1], tile[2], tile[3]);
-    set.glass.setMatrixAt(j, hidden);
-    set.label.setMatrixAt(j, hidden);
-    set.foil.setMatrixAt(j, hidden);
-  }
-  for (const set of sets) {
-    if (set.glass.instanceColor) set.glass.instanceColor.needsUpdate = true;
-    if (set.foil.instanceColor) set.foil.instanceColor.needsUpdate = true;
-    scene.add(set.glass, set.label, set.foil);
-  }
 
-  // The hero: a Burgundy bottle in black and white, standing at the centre.
+  // The hero: a Burgundy bottle in black with the only white label in the
+  // pile, lying at the centre of the floor, label up, neck toward the top of the frame.
   const heroShape = SHAPES.burgundy;
-  const thetaEnd = THETA0 + THETA_SWEEP + 0.35;
-  const heroYaw = Math.PI / 2 - thetaEnd;
-  const heroGeometry = buildBottleGeometry(heroShape, 72);
-  const heroMaterials = createHeroMaterials(buildHeroLabel());
+  const heroAt = heroPosition(heroShape);
+  const heroGeometry = buildBottleGeometry(heroShape, 96);
+  const heroLabelTexture = buildHeroLabel();
+  heroLabelTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const heroMaterials = createHeroMaterials(heroLabelTexture, buildHeroEnvironment(renderer));
   const hero = new Group();
   const heroGlass = new Mesh(heroGeometry.glass, heroMaterials.glass);
   const heroLabel = new Mesh(heroGeometry.label, heroMaterials.label);
   const heroFoil = new Mesh(heroGeometry.capsule, heroMaterials.foil);
   heroGlass.castShadow = shadows;
-  heroGlass.receiveShadow = shadows;
   heroFoil.castShadow = shadows;
+  heroLabel.receiveShadow = shadows;
   hero.add(heroGlass, heroLabel, heroFoil);
-  hero.position.set(0, heroShape.origin, 0);
-  hero.rotation.y = heroYaw;
+  hero.position.set(heroAt.x, heroAt.y, heroAt.z);
+  hero.quaternion.set(HERO_QUAT.x, HERO_QUAT.y, HERO_QUAT.z, HERO_QUAT.w);
   scene.add(hero);
+  const heroTop = heroAt.y + heroShape.bodyR;
+  key.target.position.set(0, heroAt.y, 0);
 
-  // Decor: static copies of the settled top layer, rotated and shifted around
-  // the well, so the field of bottles runs past the frame when seen from above.
-  // Low-poly geometry, same materials and labels. Built once after settling.
-  const decorCopies = tier === 'high' ? 8 : 6;
-  const decorDepth = tier === 'high' ? 0.45 : 0.3;
-  const decorGeometry = shapes.map((shape) => buildBottleGeometry(shape, 12));
-  const decorSets: BottleSet[] = decorGeometry.map((geometry, s) => {
-    const capacity = Math.max(1, (perShape[s] ?? 1) * decorCopies);
-    const glass = new InstancedMesh(geometry.glass, glassMaterial, capacity);
-    const label = new InstancedMesh(geometry.label, labelMaterial, capacity);
-    const foil = new InstancedMesh(geometry.capsule, foilMaterial, capacity);
-    geometry.label.setAttribute('aTile', new InstancedBufferAttribute(new Float32Array(capacity * 4), 4));
-    for (const mesh of [glass, label, foil]) {
-      mesh.frustumCulled = false;
-      mesh.count = 0;
-    }
-    return { glass, label, foil, geometry };
-  });
-  const buildDecor = (pileTop: number) => {
-    const ringR = config.wellRadius * 2.0 + 0.05;
-    const used = [0, 0, 0];
-    const offset = new Matrix4();
-    const bodyM = new Matrix4();
-    const p = new Vector3();
-    const q = new Quaternion();
-    const one = new Vector3(1, 1, 1);
-    const srcTiles = sets.map((set) => set.geometry.label.getAttribute('aTile') as InstancedBufferAttribute);
-    const color = new Color();
-    for (let k = 0; k < decorCopies; k++) {
-      const a = (k / decorCopies) * Math.PI * 2 + 0.37;
-      // Rotate the copy about the well centre, then shift it out onto the ring.
-      const spin = new Matrix4().makeRotationY(a * 1.7 + k * 0.9);
-      offset.makeTranslation(Math.cos(a) * ringR, 0.12 - 0.03 * (k % 3), Math.sin(a) * ringR).multiply(spin);
-      for (let i = bedCount; i < count; i++) {
-        const body = pile.bodies[i];
-        if (!body) continue;
-        const t = body.translation();
-        if (t.y < pileTop - decorDepth) continue;
-        const r = body.rotation();
-        p.set(t.x, t.y, t.z);
-        q.set(r.x, r.y, r.z, r.w);
-        bodyM.compose(p, q, one).premultiply(offset);
-        const s = shapeOf[i] ?? 0;
-        const src = sets[s]!;
-        const dst = decorSets[s]!;
-        const j = localIndex[i] ?? 0;
-        const n = used[s] ?? 0;
-        if (n >= dst.glass.instanceMatrix.count) continue;
-        dst.glass.setMatrixAt(n, bodyM);
-        dst.label.setMatrixAt(n, bodyM);
-        dst.foil.setMatrixAt(n, bodyM);
-        src.glass.getColorAt(j, color);
-        dst.glass.setColorAt(n, color);
-        src.foil.getColorAt(j, color);
-        dst.foil.setColorAt(n, color);
-        const tiles = dst.geometry.label.getAttribute('aTile') as InstancedBufferAttribute;
-        const st = srcTiles[s]!;
-        tiles.setXYZW(n, st.getX(j), st.getY(j), st.getZ(j), st.getW(j));
-        used[s] = n + 1;
-      }
-    }
-    decorSets.forEach((set, s) => {
-      const n = used[s] ?? 0;
-      set.glass.count = n;
-      set.label.count = n;
-      set.foil.count = n;
-      set.glass.instanceMatrix.needsUpdate = true;
-      set.label.instanceMatrix.needsUpdate = true;
-      set.foil.instanceMatrix.needsUpdate = true;
-      if (set.glass.instanceColor) set.glass.instanceColor.needsUpdate = true;
-      if (set.foil.instanceColor) set.foil.instanceColor.needsUpdate = true;
-      (set.geometry.label.getAttribute('aTile') as InstancedBufferAttribute).needsUpdate = true;
-      if (n > 0) scene.add(set.glass, set.label, set.foil);
-    });
-  };
-
-  // Physics.
-  await Pile.load();
-  const pile = new Pile({
-    count: dynamicCount,
-    bedCount,
-    wellRadius: config.wellRadius,
-    shapes,
-    shapeOf,
-    hero: { shape: heroShape, yaw: heroYaw },
-    probe: { radius: PROBE_RADIUS, halfHeight: PROBE_HALF },
-    rnd: mulberry(404)
-  });
+  const pile = new Pile({ baked, shapes, heroShape });
 
   // Post-processing: depth of field on the high tier only.
   let composer: EffectComposer | null = null;
@@ -377,7 +295,7 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
     composer.setPixelRatio(dpr);
     composer.setSize(w, h);
     composer.addPass(new RenderPass(scene, camera));
-    bokeh = new BokehPass(scene, camera, { focus: 0.75, aperture: 0.025, maxblur: 0.006 });
+    bokeh = new BokehPass(scene, camera, { focus: 0.66, aperture: 0.02, maxblur: 0.006 });
     composer.addPass(bokeh);
     composer.addPass(new OutputPass());
   };
@@ -389,7 +307,8 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   if (dof) buildComposer();
 
   // State.
-  let progress = options.initialProgress ?? 0;
+  let progress = Math.min(1, Math.max(0, options.initialProgress ?? 0));
+  // A page reloaded part-way down starts there: the far field opens around the probe wherever it is put.
   let current = progress;
   let reduced = options.motion.get() === 'reduced';
   let staticMode = false;
@@ -398,14 +317,12 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   let time = 0;
   let frameCount = 0;
   let physicsMs = 0;
-  let nearCount = 0;
-  let yTop = 3;
-  const yLow = 0.62;
+  let visible = 0;
   let aspect = 1;
   const monitor = new FrameMonitor(90);
   const fine = window.matchMedia('(pointer: fine)');
   const debug = params.has('debug');
-  // ?instant drops the scroll damping, so a capture at a scroll position shows that position.
+  // ?instant lets the camera chase the scroll position four times as fast, for captures.
   const instant = params.has('instant');
   const parallax = { x: 0, y: 0, tx: 0, ty: 0 };
 
@@ -419,121 +336,140 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
     camera.updateProjectionMatrix();
   };
 
-  // Camera path. Descent: a slow spiral straight down through the pile, the
-  // screen rolling gently with the direction of travel. Reveal: the camera
-  // lifts its gaze and settles level with the hero's label.
-  const pose: Pose = { pos: new Vector3(), look: new Vector3(), up: new Vector3(0, 1, 0), fov: 50, theta: THETA0 };
-  const tmpA = new Vector3();
-  const tmpB = new Vector3();
-  const tmpC = new Vector3();
-  const descentPose = (u: number, out: Pose) => {
+  // Camera path. Always straight down. The descent is linear in scroll, so
+  // every scroll step moves the same distance through the pile; a slow weave
+  // and roll keep it from feeling like a lift shaft. Near the floor the camera
+  // slows, straightens and stops over the hero, then leans in a little.
+  const pose = { x: 0, y: 0, z: 0, roll: 0, fov: 46, reveal: 0 };
+  const weave = (p: number) => 1 - smoothstep((p - 0.64) / 0.17);
+  const poseAt = (p: number, yTop: number) => {
     const portrait = aspect < 1;
-    const e = smoothstep(u);
-    const y = lerp(yTop, yLow, e);
-    const theta = THETA0 + THETA_SWEEP * u;
-    const r = 0.08 + 0.1 * Math.sin(u * Math.PI);
-    out.pos.set(Math.cos(theta) * r, y, Math.sin(theta) * r);
-    tmpA.set(-Math.sin(theta), 0, Math.cos(theta)); // tangent
-    out.look.copy(out.pos).addScaledVector(tmpA, 0.3).add(tmpB.set(-out.pos.x * 0.15, -1, -out.pos.z * 0.15));
-    out.up.copy(tmpA);
-    out.fov = (portrait ? 56 : 42) + 10 * u;
-    out.theta = theta;
-  };
-  const computePose = (p: number, out: Pose) => {
-    if (p <= DESCENT_END) {
-      descentPose(p / DESCENT_END, out);
-      return;
-    }
-    const v = smoothstep((p - DESCENT_END) / (REVEAL_END - DESCENT_END));
-    descentPose(1, out);
-    const portrait = aspect < 1;
-    const theta = THETA0 + THETA_SWEEP + 0.35 * v;
-    tmpA.set(Math.cos(theta) * HERO_DISTANCE, HERO_EYE, Math.sin(theta) * HERO_DISTANCE); // final position
-    // Frame the bottle off centre: to the right on landscape, high on portrait.
-    tmpB.copy(HERO_POINT);
-    if (portrait) {
-      // The panel covers the lower part of a phone screen; the bottle sits in the upper third.
-      tmpB.y -= 0.16;
-    } else {
-      tmpC.copy(HERO_POINT).sub(tmpA).normalize();
-      const rx = -tmpC.z;
-      const rz = tmpC.x; // right vector of a camera looking along tmpC with y up
-      tmpB.x -= rx * 0.16;
-      tmpB.z -= rz * 0.16;
-    }
-    out.pos.lerp(tmpA, v);
-    out.look.lerp(tmpB, v);
-    out.up.lerp(tmpC.set(0, 1, 0), v).normalize();
-    out.fov = lerp(out.fov, portrait ? HERO_FOV + 16 : HERO_FOV, v);
-    out.theta = theta;
+    const fall = yTop - HERO_EYE;
+    const speed = fall / (P_SLOW + (P_FLOOR - P_SLOW) / 2);
+    let depth: number;
+    if (p <= P_SLOW) depth = speed * p;
+    else if (p < P_FLOOR) {
+      const t = (p - P_SLOW) / (P_FLOOR - P_SLOW);
+      depth = speed * P_SLOW + speed * (P_FLOOR - P_SLOW) * (t - (t * t) / 2);
+    } else depth = fall + PUSH_IN * smoothstep((p - P_FLOOR) / (1 - P_FLOOR));
+    const k = weave(p);
+    const a = 0.15 * k;
+    pose.x = a * Math.sin(Math.PI * 2 * 2.3 * p + 0.5);
+    pose.z = a * Math.cos(Math.PI * 2 * 1.6 * p + 1.1);
+    pose.y = yTop - depth;
+    pose.roll = reduced ? 0 : k * (0.45 * Math.sin(Math.PI * 2 * 1.15 * p) + 0.2 * Math.sin(Math.PI * 2 * 2.9 * p + 1));
+    pose.reveal = smoothstep((p - 0.8) / (P_FLOOR - 0.8));
+    pose.fov = lerp(portrait ? 58 : 46, 50, pose.reveal);
   };
 
-  // Instance sync from the physics bodies.
-  const _p = new Vector3();
-  const _q = new Quaternion();
-  const _s = new Vector3(1, 1, 1);
-  const _m = new Matrix4();
-  const syncInstances = () => {
-    const bodies = pile.bodies;
-    for (let i = 0; i < count; i++) {
-      const body = bodies[i];
-      if (!body) continue;
-      const t = body.translation();
-      const r = body.rotation();
-      _p.set(t.x, t.y, t.z);
-      _q.set(r.x, r.y, r.z, r.w);
-      _m.compose(_p, _q, _s);
-      const set = sets[shapeOf[i] ?? 0]!;
-      const j = localIndex[i] ?? 0;
-      set.glass.setMatrixAt(j, _m);
-      set.label.setMatrixAt(j, _m);
-      set.foil.setMatrixAt(j, _m);
+  // The camera starts with the probe resting on the pile, so the first scroll moves bottles.
+  poseAt(0, 10);
+  const yTop = pile.surfaceAt(pose.x, pose.z, 0.2) + 0.04 + PROBE_DROP + PROBE_HALF + PROBE_RADIUS + 0.005;
+
+  // Draws the bottles inside the camera's downward cone. Everything else in
+  // the pile exists for the physics but costs nothing to render.
+  const counts = [0, 0, 0];
+  const drawPile = () => {
+    const tanV = Math.tan((camera.fov * Math.PI) / 360);
+    const tanD = Math.hypot(tanV, tanV * aspect);
+    const cx = camera.position.x;
+    const cy = camera.position.y;
+    const cz = camera.position.z;
+    const reach = config.reach;
+    counts[0] = counts[1] = counts[2] = 0;
+    for (let i = 0; i < total; i++) {
+      const body = i < bodyCount;
+      const poses = body ? pile.poses : underPoses;
+      const o = (body ? i : i - bodyCount) * 7;
+      const dy = cy - poses[o + 1]!;
+      if (dy < -0.1 || dy > reach) continue;
+      const dx = poses[o]! - cx;
+      const dz = poses[o + 2]! - cz;
+      const limit = dy * tanD + 0.24;
+      if (dx * dx + dz * dz > limit * limit) continue;
+      const s = shapeOf[i]!;
+      const set = sets[s]!;
+      const n = counts[s]!++;
+      const m = n * 16;
+      writeMatrix(set.glass.instanceMatrix.array as Float32Array, m, poses[o]!, poses[o + 1]!, poses[o + 2]!, poses[o + 3]!, poses[o + 4]!, poses[o + 5]!, poses[o + 6]!);
+      const l = i * 13;
+      const c = n * 3;
+      const glass = set.glass.instanceColor!.array as Float32Array;
+      const foil = set.foil.instanceColor!.array as Float32Array;
+      const tint = set.label.instanceColor!.array as Float32Array;
+      glass[c] = look[l]!;
+      glass[c + 1] = look[l + 1]!;
+      glass[c + 2] = look[l + 2]!;
+      foil[c] = look[l + 3]!;
+      foil[c + 1] = look[l + 4]!;
+      foil[c + 2] = look[l + 5]!;
+      tint[c] = look[l + 6]!;
+      tint[c + 1] = look[l + 7]!;
+      tint[c + 2] = look[l + 8]!;
+      const tiles = set.tiles.array as Float32Array;
+      const t = n * 4;
+      tiles[t] = look[l + 9]!;
+      tiles[t + 1] = look[l + 10]!;
+      tiles[t + 2] = look[l + 11]!;
+      tiles[t + 3] = look[l + 12]!;
     }
-    for (const set of sets) {
-      set.glass.instanceMatrix.needsUpdate = true;
-      set.label.instanceMatrix.needsUpdate = true;
-      set.foil.instanceMatrix.needsUpdate = true;
-    }
+    visible = 0;
+    sets.forEach((set, s) => {
+      const n = counts[s]!;
+      visible += n;
+      // The three meshes share one transform per bottle.
+      const matrices = set.glass.instanceMatrix.array as Float32Array;
+      (set.label.instanceMatrix.array as Float32Array).set(matrices.subarray(0, n * 16));
+      (set.foil.instanceMatrix.array as Float32Array).set(matrices.subarray(0, n * 16));
+      set.glass.count = set.label.count = set.foil.count = n;
+      for (const attribute of set.attributes) {
+        attribute.clearUpdateRanges();
+        attribute.addUpdateRange(0, n * attribute.itemSize);
+        attribute.needsUpdate = true;
+      }
+    });
   };
 
+  const lampWarm = new Color(0xffe2c8);
+  const lampDeep = new Color(0xffc890);
   const applyCamera = (p: number, dt: number) => {
-    computePose(p, pose);
-    tmpA.copy(pose.pos);
+    poseAt(p, yTop);
+    let x = pose.x;
+    let y = pose.y;
+    let z = pose.z;
     if (!reduced && !staticMode) {
-      tmpA.x += Math.sin(time * 0.5) * 0.008;
-      tmpA.y += Math.sin(time * 0.37) * 0.005;
-      tmpA.z += Math.cos(time * 0.43) * 0.008;
+      // A breath of drift, and the pointer nudges the eye sideways. The view stays vertical.
+      const still = 1 - pose.reveal * 0.7;
       parallax.x += (parallax.tx - parallax.x) * (1 - Math.exp(-dt * 3));
       parallax.y += (parallax.ty - parallax.y) * (1 - Math.exp(-dt * 3));
+      x += (Math.sin(time * 0.5) * 0.006 + parallax.x * 0.018) * still;
+      y += Math.sin(time * 0.37) * 0.004 * still;
+      z += (Math.cos(time * 0.43) * 0.006 + parallax.y * 0.018) * still;
     }
-    camera.position.copy(tmpA);
-    camera.up.copy(pose.up);
-    tmpB.copy(pose.look);
-    if (parallax.x !== 0 || parallax.y !== 0) {
-      // Small look offset in camera space.
-      tmpC.copy(pose.look).sub(camera.position).normalize();
-      const right = new Vector3().crossVectors(tmpC, pose.up).normalize();
-      const upv = new Vector3().crossVectors(right, tmpC).normalize();
-      tmpB.addScaledVector(right, parallax.x * 0.05).addScaledVector(upv, -parallax.y * 0.035);
-    }
-    camera.lookAt(tmpB);
+    camera.position.set(x, y, z);
+    camera.up.set(Math.sin(pose.roll), 0, -Math.cos(pose.roll));
+    camera.lookAt(x, y - 1, z);
     if (Math.abs(camera.fov - pose.fov) > 0.01) {
       camera.fov = pose.fov;
       camera.updateProjectionMatrix();
     }
-    tmpC.copy(tmpB).sub(camera.position).normalize();
-    const keyRight = new Vector3().crossVectors(tmpC, pose.up).normalize();
-    lamp.position.copy(camera.position).addScaledVector(pose.up, 0.32).addScaledVector(keyRight, -0.42);
-    pile.setProbe(pose.pos.x, pose.pos.y - 0.05, pose.pos.z);
-    pile.setClearRadius(CLEAR_RADIUS * smoothstep((p - 0.66) / 0.2));
-    const reveal = smoothstep((p - 0.72) / 0.18);
-    shaftMaterial.uniforms.uOpacity!.value = reveal * 0.32;
-    shaft.visible = reveal > 0.001;
+    pile.update(pose.x, pose.y, pose.z, pose.reveal);
+    pile.setProbe(pose.x, pose.y, pose.z);
+
+    // Light: warmer and lower with depth, then the lamp gives way to the key.
+    const depth = Math.min(1, Math.max(0, (yTop - pose.y) / (yTop - HERO_EYE)));
+    lamp.color.copy(lampWarm).lerp(lampDeep, depth);
+    lamp.intensity = lerp(lerp(2.3, 1.7, depth), 0.2, pose.reveal);
+    // Up and to the left of the frame, so highlights run the length of the glass.
+    lamp.position.set(x - 0.42 * Math.cos(pose.roll) + 0.32 * Math.sin(pose.roll), y, z - 0.42 * Math.sin(pose.roll) - 0.32 * Math.cos(pose.roll));
+    key.intensity = 2.1 * pose.reveal;
+    // Off until the reveal, so its shadow pass costs nothing on the way down.
+    key.visible = pose.reveal > 0.001;
+    key.position.set(x - 0.05, y + 0.1, z - 0.03);
     if (bokeh) {
-      const focusDistance = lerp(0.72, camera.position.distanceTo(HERO_POINT), reveal);
       const uniforms = bokeh.uniforms as Record<string, { value: number }>;
-      uniforms.focus!.value = focusDistance;
-      uniforms.aperture!.value = lerp(0.025, 0.04, reveal);
+      uniforms.focus!.value = lerp(0.66, pose.y - heroTop, pose.reveal);
+      uniforms.aperture!.value = lerp(0.02, 0.05, pose.reveal);
     }
   };
 
@@ -543,27 +479,35 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
     else renderer.render(scene, camera);
   };
 
+  const layerName = () => {
+    if (current > 0.855) return '05 The one';
+    const f = (pose.y - 0.5) / baked.pileTop;
+    const k = f > 0.74 ? 0 : f > 0.5 ? 1 : f > 0.26 ? 2 : 3;
+    return `0${k + 1} ${STRATA[k]!.name}`;
+  };
+
   const telemetry = () => {
-    options.onTelemetry({
-      depth: yTop - camera.position.y,
-      bottles: nearCount,
-      hdg: (pose.theta * 180) / Math.PI,
-      found: current > 0.93
-    });
+    options.onTelemetry({ depth: yTop - pose.y, bottles: visible, layer: layerName(), found: current > 0.855 });
   };
 
   const frame = (dt: number) => {
     time += dt;
     frameCount++;
-    if (reduced || staticMode || instant) current = progress;
-    else current += (progress - current) * (1 - Math.exp(-dt * 4.5));
+    // The camera chases the scroll position, damped, and never faster than the
+    // pile can be pushed aside. A jump (a reload mid-page, a link to the end)
+    // becomes a dive.
+    const gap = progress - current;
+    const want = reduced || staticMode ? gap : gap * (1 - Math.exp(-dt * 4.5));
+    const cap = Math.min(CHASE_MAX, CHASE + 0.9 * Math.max(0, Math.abs(gap) - 0.06)) * dt * (instant ? 4 : 1);
+    current += Math.min(cap, Math.max(-cap, want));
     applyCamera(current, dt);
     const t0 = performance.now();
     pile.step(Math.min(1 / 30, Math.max(1 / 120, dt)));
+    pile.refresh();
     physicsMs += (performance.now() - t0 - physicsMs) * 0.1;
-    syncInstances();
-    if (frameCount % 10 === 0) nearCount = pile.countNear(camera.position.x, camera.position.y, camera.position.z, 1.4);
+    drawPile();
     render();
+    options.onProgress(current);
     if (frameCount % 4 === 0) telemetry();
   };
 
@@ -591,27 +535,28 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
     if (shadows === on) return;
     shadows = on;
     renderer.shadowMap.enabled = on;
-    spot.castShadow = on;
+    key.castShadow = on;
     for (const set of sets) {
-      set.glass.castShadow = on;
-      set.glass.receiveShadow = on;
-      set.foil.castShadow = on;
-      set.label.receiveShadow = on;
+      set.glass.castShadow = set.foil.castShadow = on;
+      set.glass.receiveShadow = set.foil.receiveShadow = set.label.receiveShadow = on;
     }
-    heroGlass.castShadow = on;
-    heroGlass.receiveShadow = on;
-    heroFoil.castShadow = on;
-    for (const material of [glassMaterial, labelMaterial, foilMaterial, heroMaterials.glass, heroMaterials.label, heroMaterials.foil, floor.material]) material.needsUpdate = true;
+    heroGlass.castShadow = heroFoil.castShadow = on;
+    heroLabel.receiveShadow = on;
+    for (const material of [glassMaterial, labelMaterial, foilMaterial, heroMaterials.glass, heroMaterials.label, heroMaterials.foil]) material.needsUpdate = true;
   };
 
-  // Runtime downgrade keeps the pile as it is and spends less on pixels.
+  // Runtime downgrade: the pile and the physics stay as they are; fewer pixels,
+  // a shorter view and no extra passes.
   const lowerQuality = (toStatic: boolean) => {
     if (toStatic) {
       staticMode = true;
+      pile.setEconomy(true);
       dof = false;
       dropComposer();
       setShadows(false);
       dpr = 1;
+      config.reach = Math.min(config.reach, 1.05);
+      tier = 'low';
     } else {
       if (dof) {
         dof = false;
@@ -620,9 +565,10 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
         setShadows(false);
       }
       dpr = Math.max(1, Math.min(dpr, 1.5));
-      if (tier === 'high') tier = 'medium';
-      else tier = 'low';
+      config.reach = Math.max(1.05, config.reach - 0.22);
+      tier = tier === 'high' ? 'medium' : 'low';
     }
+    (scene.fog as FogExp2).density = 1.35 / config.reach;
     renderer.setPixelRatio(dpr);
     size();
     monitor.reset();
@@ -644,9 +590,7 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   window.addEventListener('pointermove', onPointer, { passive: true });
   const unsubMotion = options.motion.subscribe((mode) => {
     reduced = mode === 'reduced';
-    if (reduced) {
-      parallax.tx = parallax.ty = parallax.x = parallax.y = 0;
-    }
+    if (reduced) parallax.tx = parallax.ty = parallax.x = parallax.y = 0;
   });
   const unsubQuality = options.quality.subscribe((mode) => {
     if (mode === 'low') lowerQuality(true);
@@ -655,29 +599,15 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   size();
   options.onTier(tier, staticMode);
 
-  // Settle the pile across frames before the canvas fades in.
-  await new Promise<void>((resolve) => {
-    const stepSettle = () => {
-      const fraction = pile.settle(12);
-      options.onSettling(fraction);
-      if (fraction >= 1) {
-        resolve();
-        return;
-      }
-      window.requestAnimationFrame(stepSettle);
-    };
-    window.requestAnimationFrame(stepSettle);
-  });
-
-  yTop = pile.pileTop() + START_ABOVE;
-  buildDecor(pile.pileTop());
-  current = progress;
-  syncInstances();
-  // Warm up: compile every program against a real frame before showing it.
+  // First frame: the probe is placed, not moved, so nothing is flung.
+  poseAt(current, yTop);
+  pile.placeProbe(pose.x, pose.y, pose.z);
   applyCamera(current, 1 / 60);
+  drawPile();
   render();
   online = true;
   options.onOnline();
+  options.onProgress(current);
   telemetry();
   if (!document.hidden) startTicker();
 
@@ -694,7 +624,11 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
     diagnostics(): WineDiagnostics {
       return {
         tier,
-        bottles: dynamicCount,
+        bottles: total,
+        visible,
+        awake: pile.awake,
+        live: pile.live,
+        progress: current,
         drawCalls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
         pixelRatio: renderer.getPixelRatio(),

@@ -6,6 +6,7 @@ import {
   BoxGeometry,
   CanvasTexture,
   Color,
+  DoubleSide,
   LinearFilter,
   LinearMipmapLinearFilter,
   Mesh,
@@ -20,28 +21,73 @@ import {
   type WebGLRenderer
 } from 'three';
 
-// Glass tints. Filled bottles: the wine shows through flint glass, so those
-// read as the wine's own colour.
-export const GLASS_COLORS: Array<[Color, number]> = [
-  [new Color(0x070506), 5], // Bordeaux glass full of red wine: near black
-  [new Color(0x0a0608), 3], // near black with a red cast
-  [new Color(0x08110a), 3], // very dark green
-  [new Color(0x0c1a0e), 1.5], // antique green
-  [new Color(0x160c06), 1.2], // dark amber
-  [new Color(0x1f0509), 1], // garnet through flint glass
-  [new Color(0x5a4820), 0.4], // white wine through flint glass
-  [new Color(0x0a1414), 0.5] // blue-green
+// Glass, foil and label tint by stratum of the pile, top to bottom: the shelf,
+// the list, the cellar, the library. Filled bottles: the wine shows through
+// flint glass, so those read as the wine's own colour.
+export const GLASS_STRATA: Array<Array<[Color, number]>> = [
+  [
+    [new Color(0x0c1a0e), 2], // antique green
+    [new Color(0x08110a), 2], // very dark green
+    [new Color(0x070506), 2], // near black
+    [new Color(0x5a4820), 1.6], // white wine through flint glass
+    [new Color(0x7a4038), 1.2], // rosé
+    [new Color(0x1f0509), 1.2], // garnet through flint glass
+    [new Color(0x0a1414), 0.8], // blue-green
+    [new Color(0x160c06), 0.8] // dark amber
+  ],
+  [
+    [new Color(0x070506), 5], // Bordeaux glass full of red wine
+    [new Color(0x0a0608), 3], // near black with a red cast
+    [new Color(0x08110a), 2.5], // very dark green
+    [new Color(0x0c1a0e), 1], // antique green
+    [new Color(0x160c06), 0.6] // dark amber
+  ],
+  [
+    [new Color(0x050404), 4],
+    [new Color(0x0a0806), 2],
+    [new Color(0x07100a), 2],
+    [new Color(0x140b05), 1.5]
+  ],
+  [
+    [new Color(0x030303), 5],
+    [new Color(0x060404), 2],
+    [new Color(0x050805), 1]
+  ]
 ];
 
-export const FOIL_COLORS: Array<[Color, number]> = [
-  [new Color(0x8c0d18), 5], // claret red
-  [new Color(0x6a0a14), 2.5], // deep burgundy
-  [new Color(0x101010), 3], // black
-  [new Color(0xc49a3c), 1.6], // gold
-  [new Color(0x1a2e22), 0.8], // bottle green
-  [new Color(0xb9b6ae), 0.7], // pewter
-  [new Color(0xe4ddcb), 0.5] // ivory
+export const FOIL_STRATA: Array<Array<[Color, number]>> = [
+  [
+    [new Color(0xb9b6ae), 2.5], // pewter and screwcaps
+    [new Color(0x101010), 2], // black
+    [new Color(0xc49a3c), 1.5], // gold
+    [new Color(0x8c0d18), 1.5], // claret red
+    [new Color(0xe4ddcb), 1], // ivory
+    [new Color(0x1a2e22), 1], // bottle green
+    [new Color(0x8a3b1c), 1], // copper
+    [new Color(0x1f4a4a), 0.6] // teal
+  ],
+  [
+    [new Color(0x8c0d18), 5], // claret red
+    [new Color(0x6a0a14), 2.5], // deep burgundy
+    [new Color(0x101010), 3], // black
+    [new Color(0xc49a3c), 1.4] // gold
+  ],
+  [
+    [new Color(0x4a0810), 3], // old burgundy
+    [new Color(0x0c0c0c), 3], // black
+    [new Color(0x7a6428), 2], // tarnished gold
+    [new Color(0x5a0c0c), 2], // oxblood wax
+    [new Color(0x55534e), 1] // dull pewter
+  ],
+  [
+    [new Color(0x0a0a0a), 4], // black
+    [new Color(0xc49a3c), 2.5], // gold
+    [new Color(0x5a0a10), 1.5] // deep red
+  ]
 ];
+
+// Paper yellows with age: the label texture is multiplied by this.
+export const LABEL_TINT: Color[] = [new Color(1, 1, 1), new Color(1, 1, 1), new Color(0.9, 0.83, 0.7), new Color(0.9, 0.9, 0.9)];
 
 export function pickWeighted<T>(items: Array<[T, number]>, r: number): T {
   const total = items.reduce((sum, [, w]) => sum + w, 0);
@@ -82,6 +128,32 @@ export function buildEnvironment(renderer: WebGLRenderer): Texture {
   scene.add(floor);
   const pmrem = new PMREMGenerator(renderer);
   const target = pmrem.fromScene(scene, 0.02);
+  pmrem.dispose();
+  room.geometry.dispose();
+  return target.texture;
+}
+
+// Light for the hero alone: black glass only reads by what it reflects, so it
+// gets a product set. Two long softboxes low on either side draw a bright line
+// down each flank, a narrow strip overhead draws one down the middle, and the
+// room is otherwise black. The strips run along the bottle.
+export function buildHeroEnvironment(renderer: WebGLRenderer): Texture {
+  const scene = new Scene();
+  const room = new Mesh(new BoxGeometry(10, 6, 10), new MeshBasicMaterial({ color: 0x020202, side: BackSide }));
+  scene.add(room);
+  const strip = (x: number, y: number, width: number, tilt: number, color: number, power: number) => {
+    const mesh = new Mesh(new PlaneGeometry(width, 7), new MeshBasicMaterial({ color: new Color(color).multiplyScalar(power), side: DoubleSide }));
+    mesh.position.set(x, y, 0);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.rotation.y = tilt;
+    scene.add(mesh);
+  };
+  strip(-2.3, 0.95, 0.9, -1.0, 0xf2f6ff, 9);
+  strip(2.3, 0.95, 0.9, 1.0, 0xfff4e6, 7);
+  strip(0.45, 2.6, 0.22, 0, 0xffffff, 14);
+  strip(-3.6, 0.2, 0.5, -1.4, 0xdfe8ff, 3);
+  const pmrem = new PMREMGenerator(renderer);
+  const target = pmrem.fromScene(scene, 0.012);
   pmrem.dispose();
   room.geometry.dispose();
   return target.texture;
@@ -163,10 +235,10 @@ export function createFoilMaterial(): MeshStandardMaterial {
   return new MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.3, envMapIntensity: 1.5 });
 }
 
-export function createHeroMaterials(label: Texture): { glass: MeshPhysicalMaterial; label: MeshStandardMaterial; foil: MeshStandardMaterial } {
+export function createHeroMaterials(label: Texture, environment: Texture): { glass: MeshPhysicalMaterial; label: MeshStandardMaterial; foil: MeshStandardMaterial } {
   return {
-    glass: new MeshPhysicalMaterial({ color: 0x050505, roughness: 0.1, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.4, ior: 1.5 }),
-    label: new MeshStandardMaterial({ map: label, roughness: 0.62, metalness: 0, envMapIntensity: 0.4 }),
-    foil: new MeshStandardMaterial({ color: 0x0e0e0e, metalness: 0.95, roughness: 0.3, envMapIntensity: 1.3 })
+    glass: new MeshPhysicalMaterial({ color: 0x030303, roughness: 0.06, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, envMap: environment, envMapIntensity: 1.6, ior: 1.5 }),
+    label: new MeshStandardMaterial({ map: label, roughness: 0.76, metalness: 0, envMap: environment, envMapIntensity: 0.12 }),
+    foil: new MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.92, roughness: 0.34, envMap: environment, envMapIntensity: 1.5 })
   };
 }
