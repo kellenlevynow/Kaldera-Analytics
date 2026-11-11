@@ -75,8 +75,18 @@
 }
 
 .moment-display span + span {
-  margin-top: 0.35em;
+  margin-top: 0.3em;
+}
+
+.moment-display span:last-child {
   color: #d6d6d6;
+}
+
+/* The headline runs to a full sentence; it sits a step below the studio's hero size. */
+.moment-hero .display-h1 {
+  font-size: clamp(1.6rem, 3.9vw, 3.5rem);
+  letter-spacing: 0.04em;
+  line-height: 1.08;
 }
 
 .moment-close {
@@ -128,14 +138,25 @@
   will-change: opacity;
 }
 
-/* At the reveal the frame falls away around the bottle: a tall pool of light, dark beyond it. */
+/* The frame's treatment, from the first bottle to the last: a pool of light at
+   the centre and shade gathering toward the edges, over the site's own vignette.
+   Nothing at the edge is hidden, only subdued. */
 .spot {
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
+  background: radial-gradient(ellipse 46% 62% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 44%, rgba(0, 0, 0, 0.28) 76%, rgba(0, 0, 0, 0.56) 100%);
+}
+
+/* Over the bottle the same pool draws in a little closer. Opacity follows the camera. */
+.spot-close {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
   opacity: 0;
-  background: radial-gradient(ellipse 24% 58% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.46) 78%, rgba(0, 0, 0, 0.76) 100%);
+  background: radial-gradient(ellipse 26% 58% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.34) 78%, rgba(0, 0, 0, 0.5) 100%);
   will-change: opacity;
 }
 
@@ -161,8 +182,10 @@ html[data-motion='reduced'] .moment-hero > * {
 html:not(.js) .journey,
 html:not(.js) .cue,
 html:not(.js) .spot,
+html:not(.js) .spot-close,
 html:not(.js) .scrim,
-html.no-webgl .spot {
+html.no-webgl .spot,
+html.no-webgl .spot-close {
   display: none;
 }
 
@@ -180,6 +203,7 @@ html:not(.js) .moment {
 
 html.og .moment,
 html.og .spot,
+html.og .spot-close,
 html.og .scrim {
   display: none;
 }
@@ -201,7 +225,13 @@ html.og .scrim {
     background: radial-gradient(ellipse 110% 46% at 50% 50%, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0.66) 45%, rgba(0, 0, 0, 0.2) 78%, rgba(0, 0, 0, 0) 100%);
   }
   .spot {
-    background: radial-gradient(ellipse 58% 44% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.46) 78%, rgba(0, 0, 0, 0.76) 100%);
+    background: radial-gradient(ellipse 84% 54% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 44%, rgba(0, 0, 0, 0.28) 76%, rgba(0, 0, 0, 0.56) 100%);
+  }
+  .spot-close {
+    background: radial-gradient(ellipse 60% 44% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.34) 78%, rgba(0, 0, 0, 0.5) 100%);
+  }
+  .moment-hero .display-h1 {
+    font-size: 1.5rem;
   }
   html[data-page='wine'] .cue {
     display: grid;
@@ -210,6 +240,8 @@ html.og .scrim {
 
 @media print {
   .journey,
+  .spot,
+  .spot-close,
   .scrim {
     display: none;
   }

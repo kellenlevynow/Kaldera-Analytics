@@ -18,7 +18,7 @@ export const site = {
   wine: {
     path: '/wine',
     description:
-      'An interactive search through a pile of wine bottles, ending on the one that is exactly right. Kaldera Analytics builds marketing and revenue systems for wineries, estates, wine bars, storage facilities, private collections and wine country tour operators.'
+      'A search through several thousand bottles of wine, ending on one. Kaldera Analytics is a marketing and revenue practice for wine estates and the trade around them: growers, merchants, wine bars, storage and private cellars, and wine country hospitality.'
   },
 
   location: 'Boise, Idaho',
