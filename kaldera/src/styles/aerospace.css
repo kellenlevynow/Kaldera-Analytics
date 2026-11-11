@@ -1,0 +1,103 @@
+/* The aerospace and defense page: one aircraft, taken apart and put back
+   together as the visitor scrolls. The text system is shared (moments.css). */
+@import './moments.css';
+
+.journey {
+  height: 2000vh;
+  height: 2000svh;
+}
+
+/* The aircraft sits in the lower half of the opening frame; the headline reads above it. */
+.moment-hero {
+  place-content: start center;
+  padding-top: 9vh;
+}
+
+.moment-close {
+  place-content: start center;
+  padding-top: 6vh;
+}
+
+/* Headlines on this page are set in the studio's uppercase display style. */
+.moment-hero .display-h1 {
+  font-size: clamp(1.7rem, 4.4vw, 4rem);
+  letter-spacing: 0.06em;
+  line-height: 1.06;
+}
+
+.moment-hero .display-h1 span:last-child {
+  color: #d6d6d6;
+}
+
+.moment-hero .moment-sub {
+  max-width: 30em;
+}
+
+/* Component moments: an eyebrow naming the assembly and the discipline, the
+   concept line, one sentence, and a row of the disciplines it stands for. */
+.moment-part .eyebrow {
+  margin: 0;
+}
+
+.moment-part .moment-sub {
+  max-width: 29em;
+}
+
+.moment-spec {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 0;
+  margin-top: 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.85);
+}
+
+.moment-spec li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.moment-spec li + li::before {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 0.7em;
+  margin: 0 0.9em;
+  background: var(--hair);
+}
+
+.moment-close .btn-cta {
+  padding: 0.85rem 1.4rem;
+  font-size: 0.72rem;
+}
+
+html[data-page='aerospace'] .cue {
+  position: fixed;
+  z-index: 3;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .moment-hero,
+  .moment-close {
+    place-content: center;
+    padding-top: 0;
+  }
+  .moment-hero .display-h1 {
+    font-size: 1.55rem;
+  }
+  .moment-spec {
+    font-size: 0.56rem;
+  }
+  .moment-spec li + li::before {
+    margin: 0 0.6em;
+  }
+  html[data-page='aerospace'] .cue {
+    display: grid;
+  }
+}

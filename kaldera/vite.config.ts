@@ -22,7 +22,8 @@ function siteTokens(): Plugin {
     '%SITE_URL%': site.url,
     '%SITE_EMAIL%': site.email,
     '%SITE_DESCRIPTION%': site.description,
-    '%WINE_DESCRIPTION%': site.wine.description
+    '%WINE_DESCRIPTION%': site.wine.description,
+    '%AEROSPACE_DESCRIPTION%': site.aerospace.description
   };
   return {
     name: 'kaldera-site-tokens',
@@ -97,7 +98,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        wine: 'wine.html'
+        wine: 'wine.html',
+        aerospace: 'aerospace.html'
       },
       output: {
         manualChunks(id) {

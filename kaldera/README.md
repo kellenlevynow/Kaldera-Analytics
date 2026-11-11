@@ -19,7 +19,7 @@ The copy sells marketing expertise, judgment, execution and connected systems, n
 
 **The journey.** The page is 27 screens tall. The camera looks straight down the whole way, from the first frame to the last. It starts with its probe resting on the pile, so the first scroll moves bottles; the descent is linear in scroll, so every step moves the same distance; near the floor it slows and stops over one bottle, lying label up, and leans in. The pile has four strata, each with its own glass, foil and labels: the shelf, the list, the cellar and the library. The hero is the only bottle with a white label.
 
-**The text.** Every line lives in `wine.html` as a `.moment` with `data-from` and `data-to` (fractions of the journey). Moments are fixed at the centre of the screen and fade with the camera's own progress, which trails the scroll position, so words and picture stay in step (`src/wine/moments.ts`). Edit the copy and the timings there and nowhere else. The copy is an editorial on the fine wine trade, in the voice of someone who knows it from the vineyard to the restaurant list: no service lists, no figures, no claims about clients or results. It ends on the studio's one line and an introduction to the practice.
+**The text.** Every line lives in `wine.html` as a `.moment` with `data-from` and `data-to` (fractions of the journey). Moments are fixed at the centre of the screen and fade with the camera's own progress, which trails the scroll position, so words and picture stay in step (`src/ui/moments.ts`, shared with the aerospace page). Edit the copy and the timings there and nowhere else. The copy is an editorial on the fine wine trade, in the voice of someone who knows it from the vineyard to the restaurant list: no service lists, no figures, no claims about clients or results. It ends on the studio's one line and an introduction to the practice.
 
 **Motion and quality are fixed.** The page runs the reduced motion behaviour (the camera follows scroll directly, with no roll, drift or pointer parallax) and the low rendering tier (one pixel per CSS pixel, no depth of field or shadows, a short view and dense fog). There are no controls in the HUD; `data-motion="reduced"` is set on `<html>` in `wine.html` and the tier in `src/wine/scene.ts`.
 
@@ -36,6 +36,31 @@ The copy sells marketing expertise, judgment, execution and connected systems, n
 - Rendering draws only the bottles inside the camera's downward cone, a few hundred of the 2,900, into three instanced meshes per shape. The page runs the low tier; `?tier=high` turns on depth of field (BokehPass) and shadows for inspection, and `?tier=medium` the middle setting.
 - The reveal: the nose of the field lengthens to open the floor, the key narrows and the lamp gives way to it, the hero has its own reflection map (two side softboxes and an overhead strip, for the lines down the black glass), and the vignette draws in around it.
 - Review flags: `?debug` keeps the frame monitor from lowering the tier further, `?tier=high|medium|low` forces a tier, `?instant` lets the camera chase scroll four times faster, `?og` hides the HUD and text for a capture. `window.__kaldera.diagnostics()` reports progress, visible and live bottle counts, draw calls, triangles and physics time.
+
+## The aerospace and defense page (`/aerospace`)
+
+`aerospace.html` is a third entry, for manufacturers and specialist suppliers to the aerospace and defense industry: components, subsystems, materials, electronics, sensors, software, propulsion and precision parts. One next-generation unmanned aircraft stands in a dark hangar under a single light. As the visitor scrolls it comes apart into an exploded engineering view, the camera visits each assembly in turn, and the aircraft is put back together for the close. The aircraft is the demonstration, the systems are the story: each assembly stands for one part of the commercial system Kaldera builds.
+
+**The journey.** The page is 20 screens tall. Separation begins almost at once (3% of the scroll) and is complete by 17%; the eight assemblies each take 7.25% from 19.5%; reassembly runs from 80% to 93%; the final reveal holds from there. The timings live in `src/aerospace/timeline.ts` and the text intervals in `aerospace.html` follow them. The HUD reads the assembly state, the assembly in focus and the separation from the same module.
+
+| | Assembly | Stands for |
+|---|---|---|
+| 01 | Fuselage: skins, bulkheads, ribs, spars, keel | Positioning and market intelligence |
+| 02 | Sensor array: turret, nose aperture, conformal apertures | Signal and attribution |
+| 03 | Avionics: the tray of line-replaceable units, with the satcom and datalink | Data and intelligence |
+| 04 | Propulsion: intake, engine, flattened exhaust | Demand generation |
+| 05 | Payload: bay doors and the modular payload | Account-based marketing |
+| 06 | Wings: the outer panels on their root ribs | Reach and market expansion |
+| 07 | Landing gear | Conversion and revenue |
+| 08 | Flight control: four elevons and the flight control computer | Systems and governance |
+
+**The aircraft is procedural.** There is no model file. `src/aerospace/airframe.ts` defines one parametric flying-wing body (a lambda planform with a sharp-edged profile, a dorsal fairing and a shallow belly) and cuts every skin, wing, rib and control surface out of it at real span stations and chord fractions, so the pieces meet exactly and separate along the axes they would be assembled on. The panel lines, hatches, serrated bay outlines and fastener rows are drawn into a canvas texture in planform coordinates (colour and roughness); the fasteners along the main seams and the fan blades are instanced. After assembly the static meshes of each assembly are merged by material, so the whole aircraft is about sixty draw calls. The exploded offsets and the separation order are declared with each assembly; the gear stay on the floor while the airframe is hoisted.
+
+**Light and camera.** One spotlight high over the aircraft, a trace of bounce from the floor, a custom environment map (a black hall with one overhead source) for the composite and titanium, and a faint lamp that travels with the camera for the close-ups. The lifted top skin casts no shadow, so the one light reaches the structure. The floor is a dark glossy slab with a mirrored copy of the airframe beneath it, posed every frame like the original and seen through the floor's transparency. Camera keyframes live in `src/aerospace/scene.ts`: the fly-bys orbit each assembly, the path is piecewise linear in scroll with an ease per segment, and the camera itself glides after the path (frame-rate independent), so a hand-over between assemblies is a swoop. The camera's progress chases the scroll position at a capped rate and the text follows the camera. Under reduced motion the camera follows scroll directly with no glide or pointer parallax.
+
+**Quality.** Tiers follow `src/scene/quality.ts`: high (DPR 2, 2048 shadow map, reflection), medium (DPR 1.5, 1024 shadow map, reflection, the default on phones), low (DPR 1, no shadows, no reflection). The frame monitor drops shadows first, then the reflection, then the pixel ratio. The renderer draws only when the camera or pointer has moved. Review flags: `?tier=high|medium|low`, `?debug` (no automatic tier change), `?instant` (the camera follows scroll with no chase or glide, for captures), `?og` (no HUD or text). `window.__kaldera.diagnostics()` reports the tier, progress, separation, draw calls, triangles and the camera pose.
+
+`public/og-aerospace.png` is a 1200 by 630 capture of the hero with `?og&instant`.
 
 ## Email signature assets
 
@@ -87,11 +112,13 @@ public/fonts/              Barlow 400/500/600 and Barlow Condensed 600, latin wo
 public/favicon.svg, robots.txt, og.png
 src/main.ts                HUD wiring, reveals, scroll progress, lazy scene import
 wine.html, src/wine.ts     the wine page entry (see above)
-src/wine/                  scene, bottle, labels, materials, physics, layout, rapier loader, hud, moments, pile.bin
+src/wine/                  scene, bottle, labels, materials, physics, layout, rapier loader, hud, pile.bin
+aerospace.html, src/aerospace.ts   the aerospace and defense page entry (see above)
+src/aerospace/             airframe (procedural aircraft), scene, timeline, hud, types
 scripts/bake-pile.mjs      pours and settles the wine page's pile offline
 src/site.config.ts         domain, email, coordinates (placeholders flagged)
-src/styles/                tokens, base, hud, sections, fallback
-src/ui/                    hud, nav, reveal (GSAP), motion (fixed configuration)
+src/styles/                tokens, base, hud, sections, fallback, moments (shared), wine, aerospace
+src/ui/                    hud, nav, reveal (GSAP), motion (fixed configuration), moments (the fixed centred text of the journeys)
 src/scene/                 index, heightfield, terrain, bake, bake.worker, rocks, shaders, sky, network, camera, noise, quality
 wrangler.jsonc             Workers static assets config (assets.directory ./dist)
 ```

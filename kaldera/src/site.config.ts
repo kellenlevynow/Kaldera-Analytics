@@ -18,13 +18,23 @@ export const site = {
   // vite.config.ts, which marks the current page. To add a destination, add an
   // entry here; the header lays items out in order and collapses to the menu on
   // narrow screens. Labels are plain text, hrefs are site-relative.
-  navigation: [{ label: 'Wine, Estates & Collections', href: '/wine' }],
+  navigation: [
+    { label: 'Aerospace & Defense', href: '/aerospace' },
+    { label: 'Wine, Estates & Collections', href: '/wine' }
+  ],
 
   // The wine page at /wine: wineries, vineyards, estates, wine bars, storage, private vaults, tour operators.
   wine: {
     path: '/wine',
     description:
       'A search through several thousand bottles of wine, ending on one. Kaldera Analytics is a marketing and revenue practice for wine estates and the trade around them: growers, merchants, wine bars, storage and private cellars, and wine country hospitality.'
+  },
+
+  // The aerospace and defense page at /aerospace: manufacturers and specialist suppliers to the A&D industry.
+  aerospace: {
+    path: '/aerospace',
+    description:
+      'Engineered to be found. Built to be chosen. Kaldera Analytics builds the market intelligence, strategy and revenue infrastructure that connect advanced manufacturers, specialist suppliers and technology providers in aerospace and defense with the programs, primes and partners that need them.'
   },
 
   location: 'Boise, Idaho',

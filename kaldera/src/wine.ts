@@ -3,7 +3,7 @@ import './styles/wine.css';
 import { site } from './site.config';
 import { initNav } from './ui/nav';
 import { initWineHud } from './wine/hud';
-import { initMoments } from './wine/moments';
+import { initMoments } from './ui/moments';
 import type { WineSceneController } from './wine/types';
 
 const html = document.documentElement;
