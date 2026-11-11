@@ -68,6 +68,10 @@ export default defineConfig({
   build: {
     target: 'es2020',
     cssTarget: 'chrome90',
+    // One stylesheet for the whole site, inlined into each page below. Split CSS
+    // would make the shared chunk list a stylesheet as a preload dependency that
+    // the inliner has already removed from disk.
+    cssCodeSplit: false,
     sourcemap: false,
     assetsInlineLimit: 0,
     modulePreload: { polyfill: false },
