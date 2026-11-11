@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en" data-motion="full" data-page="aerospace">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G57RK7DHTP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-G57RK7DHTP');
+    </script>
+    <!-- Microsoft Clarity -->
+    <script async src="/clarity.js"></script>
+    <title>Engineered to be found | Kaldera Analytics for aerospace and defense manufacturers</title>
+    <meta name="description" content="%AEROSPACE_DESCRIPTION%" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="%SITE_URL%/aerospace" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kaldera Analytics" />
+    <meta property="og:title" content="Engineered to be found | Kaldera Analytics for aerospace and defense" />
+    <meta property="og:description" content="%AEROSPACE_DESCRIPTION%" />
+    <meta property="og:url" content="%SITE_URL%/aerospace" />
+    <meta property="og:image" content="%SITE_URL%/og-aerospace.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Engineered to be found | Kaldera Analytics for aerospace and defense" />
+    <meta name="twitter:description" content="%AEROSPACE_DESCRIPTION%" />
+    <meta name="twitter:image" content="%SITE_URL%/og-aerospace.png" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "%SITE_URL%/aerospace#webpage",
+      "url": "%SITE_URL%/aerospace",
+      "name": "Engineered to be found | Kaldera Analytics for aerospace and defense",
+      "description": "%AEROSPACE_DESCRIPTION%",
+      "isPartOf": { "@id": "%SITE_URL%/#organization" },
+      "about": ["Aerospace manufacturers", "Defense suppliers", "Precision manufacturing", "Aerospace components and subsystems", "Defense electronics and sensors", "Propulsion technology", "Advanced materials"],
+      "provider": {
+        "@type": "Organization",
+        "@id": "%SITE_URL%/#organization",
+        "name": "Kaldera Analytics",
+        "url": "%SITE_URL%/",
+        "email": "%SITE_EMAIL%"
+      }
+    }
+    </script>
+    <link rel="preload" href="/fonts/barlow-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <script>document.documentElement.classList.add('js')</script>
+  </head>
+  <body>
+    <a class="skip" href="#contact" data-to-end>Skip to the message</a>
+
+    <!-- The poster: the aircraft's planform in hairlines under one pool of light.
+         It is the first paint and the fallback when WebGL is unavailable. -->
+    <div class="poster" aria-hidden="true">
+      <svg class="poster-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+<rect width="1440" height="900" fill="#000"/>
+<defs>
+<radialGradient id="pool" cx="50%" cy="46%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity="0.11"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.03"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="720" cy="430" rx="620" ry="420" fill="url(#pool)"/>
+<g fill="none" stroke="#fff" stroke-width="1" vector-effect="non-scaling-stroke">
+<path d="M720 86L1270 526L1270 586L962 509L775 779L665 779L478 509L170 586L170 526Z" opacity="0.9"/>
+<path d="M720 86L720 779" opacity="0.18"/>
+<path d="M962 509L478 509" opacity="0.18"/>
+<path d="M670 255L770 255L790 286L650 286Z" opacity="0.5"/>
+<path d="M684 779L756 779L744 752L696 752Z" opacity="0.5"/>
+<path d="M980 520L1210 578" opacity="0.35"/><path d="M944 522L1180 582" opacity="0.35"/>
+<path d="M460 520L230 578" opacity="0.35"/><path d="M496 522L260 582" opacity="0.35"/>
+<path d="M620 420L820 420L850 640L590 640Z" opacity="0.22"/>
+<path d="M600 140L720 86L840 140" opacity="0.3"/>
+<circle cx="720" cy="190" r="22" opacity="0.4"/>
+</g>
+<ellipse cx="720" cy="800" rx="520" ry="26" fill="none" stroke="#fff" opacity="0.08"/>
+</svg>
+    </div>
+    <canvas id="scene" class="scene" aria-hidden="true"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="scrim" aria-hidden="true"></div>
+
+    <header class="hud hud-top">
+      <a class="wordmark" href="/" aria-label="Kaldera Analytics, home">
+        <span class="wordmark-name">Kaldera</span>
+        <span class="wordmark-sub">Analytics</span>
+      </a>
+      <p class="hud-status">
+        <span>Aerospace and defense</span><span class="hud-sep" aria-hidden="true">/</span>
+        <span data-scene-status>Poster</span>
+      </p>
+      <div class="hud-right">
+        <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">Menu</button>
+        <nav class="nav" id="primary-nav" aria-label="Primary">
+          <ul class="nav-list">%SITE_NAV%</ul>
+          <a class="btn nav-cta" href="#contact" data-to-end>Start a conversation</a>
+        </nav>
+        <a class="btn hud-cta" href="#contact" data-to-end>Start a conversation</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- The text of the journey. Each moment is fixed at the centre of the screen and
+           fades with the camera's progress (data-from and data-to, as fractions of the
+           journey). The intervals follow src/aerospace/timeline.ts: separation from 0.03
+           to 0.17, eight assemblies from 0.195 in steps of 0.0725, reassembly from 0.80. -->
+      <div class="stage">
+        <section class="moment moment-hero" data-from="-1" data-to="0.04" data-scrim="0.3" aria-labelledby="hero-title">
+          <p class="eyebrow"><span class="idx">[ 00 ]</span>Kaldera Analytics for aerospace and defense</p>
+          <h1 class="display display-h1" id="hero-title">
+            <span>Engineered to be found.</span>
+            <span>Built to be chosen.</span>
+          </h1>
+          <p class="moment-sub">Exceptional capabilities deserve more than conventional visibility. They deserve a strategy engineered to put them in front of the right opportunities.</p>
+        </section>
+
+        <section class="moment" data-scrim="0.6" data-from="0.1" data-to="0.178">
+          <p class="moment-line">The engineering beneath the capability.</p>
+          <p class="moment-sub">Your manufacturing capabilities are engineered to solve complex problems. Your market strategy should be engineered with the same precision.</p>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.207" data-to="0.2595">
+          <p class="eyebrow"><span class="idx">[ 01 ]</span>Fuselage<span class="hud-sep" aria-hidden="true"> / </span>Positioning and market intelligence</p>
+          <p class="moment-line">Every aircraft begins with a structural foundation. Every commercial strategy should too.</p>
+          <p class="moment-sub">Where your capabilities fit, which markets and programs need them, and where the competitive openings are.</p>
+          <ul class="moment-spec"><li>Market intelligence</li><li>Competitive positioning</li><li>Ideal customer profile</li><li>Program research</li></ul>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.2795" data-to="0.332">
+          <p class="eyebrow"><span class="idx">[ 02 ]</span>Sensor array<span class="hud-sep" aria-hidden="true"> / </span>Signal and attribution</p>
+          <p class="moment-line">Knowing where to look changes everything.</p>
+          <p class="moment-sub">Meaningful buying signals separated from noise, and clear visibility into what is actually generating opportunities.</p>
+          <ul class="moment-spec"><li>Attribution</li><li>Analytics</li><li>Intent signals</li><li>Tracking and measurement</li></ul>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.352" data-to="0.4045">
+          <p class="eyebrow"><span class="idx">[ 03 ]</span>Avionics<span class="hud-sep" aria-hidden="true"> / </span>Data and intelligence</p>
+          <p class="moment-line">Disconnected information creates blind spots.</p>
+          <p class="moment-sub">Customer intelligence, account data, campaign performance and commercial activity, connected into one operating picture.</p>
+          <ul class="moment-spec"><li>First-party data</li><li>Analytics infrastructure</li><li>Account intelligence</li><li>Data integration</li></ul>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.4245" data-to="0.477">
+          <p class="eyebrow"><span class="idx">[ 04 ]</span>Propulsion<span class="hud-sep" aria-hidden="true"> / </span>Demand generation</p>
+          <p class="moment-line">Capability needs momentum.</p>
+          <p class="moment-sub">Coordinated programs that create awareness, generate qualified interest and move the right prospects toward a real commercial conversation.</p>
+          <ul class="moment-spec"><li>Demand generation</li><li>Paid acquisition</li><li>Campaign strategy</li><li>Content distribution</li></ul>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.497" data-to="0.5495">
+          <p class="eyebrow"><span class="idx">[ 05 ]</span>Payload<span class="hud-sep" aria-hidden="true"> / </span>Account-based marketing</p>
+          <p class="moment-line">Precision matters more than volume.</p>
+          <p class="moment-sub">Commercial effort concentrated on the primes, OEMs, procurement stakeholders, program teams and strategic accounts that represent real opportunity.</p>
+          <ul class="moment-spec"><li>Account-based marketing</li><li>Account intelligence</li><li>Buying-committee mapping</li><li>Personalized engagement</li></ul>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.5695" data-to="0.622">
+          <p class="eyebrow"><span class="idx">[ 06 ]</span>Wings<span class="hud-sep" aria-hidden="true"> / </span>Reach and market expansion</p>
+          <p class="moment-line">Build the reach to pursue opportunities beyond existing relationships.</p>
+          <p class="moment-sub">New market segments, adjacent applications, strategic partnerships and additional routes to market.</p>
+          <ul class="moment-spec"><li>Market expansion</li><li>SEO and answer engine optimization</li><li>Technical content</li><li>Strategic partnerships</li></ul>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.642" data-to="0.6945">
+          <p class="eyebrow"><span class="idx">[ 07 ]</span>Landing gear<span class="hud-sep" aria-hidden="true"> / </span>Conversion and revenue</p>
+          <p class="moment-line">Generating interest is only part of the equation.</p>
+          <p class="moment-sub">The infrastructure that turns qualified interest into conversations, opportunities, pipeline and measurable revenue.</p>
+          <ul class="moment-spec"><li>CRM architecture</li><li>Sales enablement</li><li>Conversion rate optimization</li><li>Revenue operations</li></ul>
+        </section>
+
+        <section class="moment moment-part" data-scrim="0.62" data-from="0.7145" data-to="0.767">
+          <p class="eyebrow"><span class="idx">[ 08 ]</span>Flight control<span class="hud-sep" aria-hidden="true"> / </span>Systems and governance</p>
+          <p class="moment-line">Performance requires control.</p>
+          <p class="moment-sub">The entire commercial system connected through automation, measurement, data integrity and clearly defined performance criteria.</p>
+          <ul class="moment-spec"><li>Automation</li><li>Governance</li><li>AI-enabled workflows</li><li>Systems architecture</li></ul>
+        </section>
+
+        <section class="moment" data-scrim="0.6" data-from="0.82" data-to="0.905">
+          <p class="moment-line">Individual functions, engineered to work together.</p>
+          <p class="moment-sub">The aircraft is what happens when every component is designed for the whole. Precision in execution. Visibility in performance.</p>
+        </section>
+
+        <section class="moment moment-close" id="contact" data-from="0.948" data-to="2" data-scrim="0.55" aria-labelledby="t-close">
+          <p class="eyebrow"><span class="idx">[ 09 ]</span>Mission readiness</p>
+          <h2 class="display moment-display" id="t-close">
+            <span>Your capabilities.</span>
+            <span>Connected to opportunity.</span>
+          </h2>
+          <p class="moment-sub">We build the intelligence, strategy and revenue infrastructure that help advanced manufacturers reach the right markets, engage the right customers and turn technical capability into measurable growth.</p>
+          <a class="btn btn-cta" href="mailto:%SITE_EMAIL%?subject=Aerospace%20and%20defense%20capability%20assessment">Engineer your next advantage</a>
+          <div class="channel">
+            <a class="channel-email link" href="mailto:%SITE_EMAIL%" data-site-email>%SITE_EMAIL%</a>
+            <button type="button" class="btn btn-copy" data-copy-email>Copy</button>
+          </div>
+          <p class="colophon">Boise, Idaho. Marketing and revenue systems. <a href="/">Studio</a><a href="/privacy">Privacy</a></p>
+        </section>
+      </div>
+
+      <div class="cue" data-cue aria-hidden="true">
+        <span class="cue-text">Scroll</span>
+        <span class="cue-line"></span>
+      </div>
+
+      <!-- Scroll length for the journey: 20 screens. -->
+      <div class="journey" aria-hidden="true"></div>
+    </main>
+
+    <footer class="hud hud-bottom">
+      <div class="telemetry" aria-hidden="true">
+        <div class="tele"><span class="tele-key">Assembly</span><span class="tele-val" data-tele="assembly">Integrated</span></div>
+        <div class="tele"><span class="tele-key">Focus</span><span class="tele-val" data-tele="focus">00 Platform</span></div>
+        <div class="tele"><span class="tele-key">Separation</span><span class="tele-val" data-tele="separation">000 %</span></div>
+      </div>
+      <p class="active-node"><span class="tele-key">Systems</span><span data-systems>00 / 08</span></p>
+      <div class="traverse" aria-hidden="true"><div class="traverse-bar" data-progress></div></div>
+    </footer>
+
+    <script type="module" src="/src/aerospace.ts"></script>
+  </body>
+</html>
