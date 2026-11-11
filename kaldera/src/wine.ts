@@ -2,9 +2,8 @@ import './styles/index.css';
 import './styles/wine.css';
 import { site } from './site.config';
 import { motionStore, qualityStore } from './ui/motion';
-import { initReveals } from './ui/reveal';
 import { initWineHud } from './wine/hud';
-import { initCaptions } from './wine/overlay';
+import { initMoments } from './wine/moments';
 import type { WineSceneController } from './wine/types';
 
 const html = document.documentElement;
@@ -12,17 +11,26 @@ html.classList.add('js');
 if (new URLSearchParams(window.location.search).has('og')) html.classList.add('og');
 
 const hud = initWineHud({ motion: motionStore, quality: qualityStore, email: site.email });
-const reveals = initReveals(() => motionStore.get() === 'reduced');
-initCaptions();
-motionStore.subscribe(() => reveals.rebuild());
+const moments = initMoments();
 
 // Scroll progress over the whole page. The descent is continuous, so progress
-// is simply the scrolled fraction; the scene maps it onto the camera path.
+// is simply the scrolled fraction; the scene maps it onto the camera path and
+// reports the camera's own progress back, which is what the text follows.
 let maxScroll = 1;
 let progress = 0;
 let scene: WineSceneController | null = null;
+let sceneDriving = false;
 let scrolled = false;
 let found = false;
+
+function follow(p: number): void {
+  moments.set(p);
+  const nowFound = p > 0.855;
+  if (nowFound !== found) {
+    found = nowFound;
+    hud.setFound(found);
+  }
+}
 
 function measure(): void {
   maxScroll = Math.max(1, html.scrollHeight - window.innerHeight);
@@ -34,11 +42,7 @@ function update(): void {
   progress = y / maxScroll;
   hud.setProgress(progress);
   scene?.setProgress(progress);
-  const nowFound = progress > 0.93;
-  if (nowFound !== found) {
-    found = nowFound;
-    hud.setFound(found);
-  }
+  if (!sceneDriving) follow(progress);
   if (!scrolled && y > 24) {
     scrolled = true;
     hud.hideCue();
@@ -50,6 +54,22 @@ window.addEventListener('resize', measure);
 window.addEventListener('load', measure);
 if (document.fonts) document.fonts.ready.then(measure).catch(() => undefined);
 measure();
+
+// Links to the closing message go to the end of the journey; the camera follows.
+const toEnd = (event: Event) => {
+  event.preventDefault();
+  window.scrollTo({ top: html.scrollHeight });
+};
+for (const link of Array.from(document.querySelectorAll<HTMLElement>('[data-to-end]'))) link.addEventListener('click', toEnd);
+// Keyboard focus landing in a moment brings the journey to it.
+for (const moment of Array.from(document.querySelectorAll<HTMLElement>('.moment[data-from]'))) {
+  moment.addEventListener('focusin', () => {
+    const from = Math.max(0, Number(moment.dataset.from));
+    const to = Math.min(1, Number(moment.dataset.to));
+    const target = to >= 1 ? 1 : (from + to) / 2;
+    if (Math.abs(target - progress) > 0.01) window.scrollTo({ top: target * maxScroll });
+  });
+}
 
 function supportsWebGL(): boolean {
   try {
@@ -75,14 +95,13 @@ async function loadScene(): Promise<void> {
       motion: motionStore,
       quality: qualityStore,
       initialProgress: progress,
-      onSettling(fraction) {
-        hud.setSceneStatus(`Settling ${String(Math.round(fraction * 100)).padStart(2, '0')}%`);
-      },
       onOnline() {
         canvas.classList.add('is-online');
         html.classList.add('has-scene');
         hud.setSceneStatus('Scene online');
+        sceneDriving = true;
       },
+      onProgress: follow,
       onTelemetry: hud.setTelemetry,
       onTier(tier, staticMode) {
         html.dataset.tier = tier;
@@ -94,6 +113,7 @@ async function loadScene(): Promise<void> {
     Object.defineProperty(window, '__kaldera', { value: { diagnostics: () => scene?.diagnostics() ?? null, pause: () => scene?.pause(), resume: () => scene?.resume() }, configurable: true });
   } catch (error) {
     console.error('Scene failed to start, keeping the poster.', error);
+    sceneDriving = false;
     html.classList.add('no-webgl');
     hud.setSceneStatus('Poster');
   }

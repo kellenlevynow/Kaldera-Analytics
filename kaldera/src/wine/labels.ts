@@ -1,6 +1,7 @@
 // Procedural label atlas. Every estate on it is invented; the varietals and
 // regions are generic. Drawn once on a canvas, deterministic by seed.
 import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three';
+import { mulberry } from './layout';
 
 export const ATLAS_COLS = 8;
 export const ATLAS_ROWS = 6;
@@ -8,16 +9,7 @@ export const TILE_W = 256;
 export const TILE_H = 160;
 export const LABEL_COUNT = ATLAS_COLS * ATLAS_ROWS;
 
-export function mulberry(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+export { mulberry } from './layout';
 
 const HOUSES = ['Château', 'Domaine', 'Clos', 'Tenuta', 'Bodega', 'Quinta', 'Weingut', 'Estate', 'Maison', 'Villa'];
 const NAMES = [
@@ -37,36 +29,73 @@ interface Palette {
   soft: string;
 }
 
-// Weighted toward cream and ivory paper with red or black ink, the classic claret look.
-const PALETTES: Array<[Palette, number]> = [
-  [{ paper: '#efe6d2', ink: '#1d1a17', accent: '#8a1c2b', soft: '#8b8371' }, 5],
-  [{ paper: '#f4eedf', ink: '#2a2420', accent: '#7a1420', soft: '#9c968a' }, 4],
-  [{ paper: '#e9dfc6', ink: '#2b2a28', accent: '#2f4a3a', soft: '#8d8a7c' }, 2],
-  [{ paper: '#f7f3ea', ink: '#1a1f2e', accent: '#1a1f2e', soft: '#a0a3ad' }, 2],
-  [{ paper: '#ecdfc4', ink: '#3b2414', accent: '#9a6a2c', soft: '#a99a7e' }, 2],
-  [{ paper: '#fbf8f1', ink: '#161616', accent: '#b8972e', soft: '#9c968a' }, 2],
-  [{ paper: '#111111', ink: '#f0ead8', accent: '#c9a84c', soft: '#7a7568' }, 1],
-  [{ paper: '#5b1420', ink: '#f6e9d4', accent: '#d9b35a', soft: '#b08a8e' }, 0.6],
-  [{ paper: '#1f2a24', ink: '#efe7d2', accent: '#c7b57a', soft: '#86917f' }, 0.5],
-  [{ paper: '#f1e3d3', ink: '#4a1a1a', accent: '#c2452f', soft: '#b39a86' }, 1]
+// The pile has four strata, top to bottom, and the atlas gives each its own run of tiles:
+// the shelf (bright, modern), the list (classic claret), the cellar (aged paper)
+// and the library (dark paper, gold ink).
+export const STRATA: Array<{ name: string; start: number; count: number }> = [
+  { name: 'The shelf', start: 0, count: 12 },
+  { name: 'The list', start: 12, count: 16 },
+  { name: 'The cellar', start: 28, count: 12 },
+  { name: 'The library', start: 40, count: 8 }
 ];
 
-function pickPalette(rnd: () => number): Palette {
-  const total = PALETTES.reduce((sum, [, w]) => sum + w, 0);
-  let x = rnd() * total;
-  for (const [palette, w] of PALETTES) {
-    x -= w;
-    if (x <= 0) return palette;
-  }
-  return PALETTES[0]![0];
-}
+const PALETTES: Palette[][] = [
+  [
+    { paper: '#f6f4ee', ink: '#151515', accent: '#e2562f', soft: '#8f8a80' },
+    { paper: '#ead8c8', ink: '#2c2320', accent: '#b5532e', soft: '#a08a7c' },
+    { paper: '#dde6da', ink: '#1f2a22', accent: '#38513f', soft: '#7f8f84' },
+    { paper: '#1e2a44', ink: '#f1ece0', accent: '#e9b54d', soft: '#8b93a8' },
+    { paper: '#f2d9cf', ink: '#5a1f24', accent: '#b93a3a', soft: '#b3948c' },
+    { paper: '#f5efdc', ink: '#22201c', accent: '#2a6f6f', soft: '#9a937f' },
+    { paper: '#ffffff', ink: '#000000', accent: '#000000', soft: '#9a9a9a' },
+    { paper: '#e6c65a', ink: '#201a0c', accent: '#201a0c', soft: '#8c7a3a' }
+  ],
+  [
+    { paper: '#efe6d2', ink: '#1d1a17', accent: '#8a1c2b', soft: '#8b8371' },
+    { paper: '#f4eedf', ink: '#2a2420', accent: '#7a1420', soft: '#9c968a' },
+    { paper: '#efe6d2', ink: '#1d1a17', accent: '#8a1c2b', soft: '#8b8371' },
+    { paper: '#e9dfc6', ink: '#2b2a28', accent: '#2f4a3a', soft: '#8d8a7c' },
+    { paper: '#f7f3ea', ink: '#1a1f2e', accent: '#1a1f2e', soft: '#a0a3ad' },
+    { paper: '#fbf8f1', ink: '#161616', accent: '#b8972e', soft: '#9c968a' }
+  ],
+  [
+    { paper: '#d8c7a0', ink: '#2a2017', accent: '#6e1a1a', soft: '#8a7a5c' },
+    { paper: '#cdb98e', ink: '#30261a', accent: '#4a3a1c', soft: '#8a7955' },
+    { paper: '#e0d1ad', ink: '#2b2118', accent: '#7a1f1f', soft: '#93835f' },
+    { paper: '#c9b891', ink: '#1f1a14', accent: '#1f1a14', soft: '#837454' }
+  ],
+  [
+    { paper: '#0f0f0f', ink: '#e9dfc4', accent: '#c9a84c', soft: '#8a8068' },
+    { paper: '#3d0d14', ink: '#f0e2c6', accent: '#d1ad55', soft: '#a98a8c' },
+    { paper: '#18221c', ink: '#e9e0c8', accent: '#c2b072', soft: '#86917f' },
+    { paper: '#1c1c20', ink: '#d9d9d9', accent: '#b9b9b9', soft: '#7d7d84' }
+  ]
+];
 
 const SERIF = "Georgia, 'Times New Roman', Times, serif";
 const SANS = "'Barlow', 'Helvetica Neue', Arial, sans-serif";
 const COND = "'Barlow Condensed', 'Barlow', 'Arial Narrow', sans-serif";
 
 type Layout = 'classic' | 'modern' | 'initial' | 'band' | 'crest' | 'rule';
-const LAYOUTS: Layout[] = ['classic', 'classic', 'crest', 'classic', 'rule', 'classic', 'modern', 'crest', 'classic', 'band', 'classic', 'initial'];
+const LAYOUTS: Layout[][] = [
+  ['modern', 'band', 'initial', 'rule', 'modern', 'band', 'initial', 'modern', 'rule', 'band', 'modern', 'initial'],
+  ['classic', 'classic', 'crest', 'classic', 'classic', 'rule', 'classic', 'crest', 'classic', 'classic', 'crest', 'classic', 'rule', 'classic', 'crest', 'classic'],
+  ['classic', 'crest', 'classic', 'rule', 'classic', 'classic', 'crest', 'classic', 'classic', 'rule', 'classic', 'crest'],
+  ['crest', 'rule', 'classic', 'crest', 'rule', 'classic', 'crest', 'rule']
+];
+
+function stratumOf(index: number): number {
+  for (let k = 0; k < STRATA.length; k++) {
+    const stratum = STRATA[k]!;
+    if (index < stratum.start + stratum.count) return k;
+  }
+  return STRATA.length - 1;
+}
+
+function isDark(hex: string): boolean {
+  const n = parseInt(hex.slice(1), 16);
+  return ((n >> 16) & 255) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11 < 110;
+}
 
 function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, font: (size: number) => string, start: number, min: number): number {
   let size = start;
@@ -78,7 +107,7 @@ function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, font
   return size;
 }
 
-function wear(ctx: CanvasRenderingContext2D, rnd: () => number, w: number, h: number, dark: boolean): void {
+function wear(ctx: CanvasRenderingContext2D, rnd: () => number, w: number, h: number, dark: boolean, aged: boolean): void {
   // Paper grain and a few flecks: imperfections that read at a glance, invisible from afar.
   ctx.save();
   ctx.globalAlpha = 0.12;
@@ -88,6 +117,28 @@ function wear(ctx: CanvasRenderingContext2D, rnd: () => number, w: number, h: nu
     ctx.fillStyle = dark ? '#ffffff' : '#000000';
     ctx.globalAlpha = 0.03 + rnd() * 0.06;
     ctx.fillRect(x, y, 1 + rnd() * 1.5, 1 + rnd() * 1.5);
+  }
+  if (aged) {
+    // Foxing and damp: brown blooms and a scuffed edge, decades in a cellar.
+    for (let i = 0; i < 9; i++) {
+      const x = rnd() * w;
+      const y = rnd() * h;
+      const r = 6 + rnd() * 26;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(96,62,24,${0.1 + rnd() * 0.16})`);
+      g.addColorStop(1, 'rgba(96,62,24,0)');
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    ctx.fillStyle = 'rgba(70,48,22,0.5)';
+    for (let i = 0; i < 70; i++) {
+      const edge = rnd() < 0.5;
+      const x = edge ? (rnd() < 0.5 ? rnd() * 5 : w - rnd() * 5) : rnd() * w;
+      const y = edge ? rnd() * h : rnd() < 0.5 ? rnd() * 4 : h - rnd() * 4;
+      ctx.globalAlpha = 0.15 + rnd() * 0.3;
+      ctx.fillRect(x, y, 1 + rnd() * 3, 1 + rnd() * 3);
+    }
   }
   // Soft vignette toward the edges, like a label that has been handled.
   const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, w * 0.75);
@@ -243,14 +294,18 @@ function engraving(ctx: CanvasRenderingContext2D, rnd: () => number, x: number, 
 function drawLabel(ctx: CanvasRenderingContext2D, rnd: () => number, index: number): void {
   const w = TILE_W;
   const h = TILE_H;
-  const pal = pickPalette(rnd);
-  const layout = LAYOUTS[index % LAYOUTS.length] ?? 'classic';
+  const stratum = stratumOf(index);
+  const local = index - (STRATA[stratum]?.start ?? 0);
+  const palettes = PALETTES[stratum] ?? PALETTES[0]!;
+  const pal = palettes[Math.floor(rnd() * palettes.length)] ?? palettes[0]!;
+  const layouts = LAYOUTS[stratum] ?? LAYOUTS[0]!;
+  const layout = layouts[local % layouts.length] ?? 'classic';
   const house = HOUSES[Math.floor(rnd() * HOUSES.length)] ?? 'Domaine';
   const name = NAMES[(index * 7 + Math.floor(rnd() * 5)) % NAMES.length] ?? 'Vallorne';
   const varietal = VARIETALS[Math.floor(rnd() * VARIETALS.length)] ?? 'Pinot Noir';
   const designation = DESIGNATIONS[Math.floor(rnd() * DESIGNATIONS.length)] ?? 'Estate Reserve';
   const vintage = String(1996 + Math.floor(rnd() * 27));
-  const dark = pal.paper === '#111111' || pal.paper === '#5b1420' || pal.paper === '#1f2a24';
+  const dark = isDark(pal.paper);
 
   ctx.fillStyle = pal.paper;
   ctx.fillRect(0, 0, w, h);
@@ -378,7 +433,14 @@ function drawLabel(ctx: CanvasRenderingContext2D, rnd: () => number, index: numb
       break;
     }
   }
-  wear(ctx, rnd, w, h, dark);
+  if (stratum === 3) {
+    // Library bottles are numbered.
+    ctx.fillStyle = pal.soft;
+    ctx.font = `500 7.5px ${SANS}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`No. ${String(100 + Math.floor(rnd() * 880)).padStart(4, '0')}`, w - 10, h - 9);
+  }
+  wear(ctx, rnd, w, h, dark, stratum === 2);
 }
 
 export function buildLabelAtlas(seed = 2026): CanvasTexture {
@@ -419,47 +481,81 @@ export function tileRect(i: number): [number, number, number, number] {
   return [col * sx + inset, 1 - (row + 1) * sy + inset, sx - 2 * inset, sy - 2 * inset];
 }
 
-// The hero's label: the only monochrome label in the pile.
+// The hero's label: the only white label in the pile, set in the studio's own type.
+// The bottle is seen from directly above, so the middle of the wrap carries everything.
 export function buildHeroLabel(): CanvasTexture {
-  const w = 512;
-  const h = 320;
+  const w = 1024;
+  const h = 560;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('No 2D context for the hero label');
-  ctx.fillStyle = '#0a0a0a';
+  const cx = w / 2;
+  ctx.fillStyle = '#f3f0e8';
   ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(22, 22, w - 44, h - 44);
+  // Paper tooth.
+  const rnd = mulberry(7);
+  for (let i = 0; i < 5200; i++) {
+    ctx.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.035)' : 'rgba(255,255,255,0.5)';
+    ctx.fillRect(rnd() * w, rnd() * h, 1.5, 1.5);
+  }
+  const ink = '#0b0b0b';
+  // Double hairline frame.
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(232, 34, w - 464, h - 68);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(242, 44, w - 484, h - 88);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#a7a7a7';
-  ctx.font = `500 15px ${SANS}`;
-  ctx.letterSpacing = '5px';
-  ctx.fillText('ESTATE RESERVE', w / 2, 62);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `600 86px ${COND}`;
-  ctx.letterSpacing = '12px';
-  ctx.fillText('KALDERA', w / 2 + 6, 140);
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  // The mark: an orbit with one body on it.
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(w / 2 - 70, 192);
-  ctx.lineTo(w / 2 + 70, 192);
+  ctx.ellipse(cx, 104, 34, 15, -0.42, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `500 15px ${SANS}`;
+  ctx.fillStyle = ink;
+  ctx.beginPath();
+  ctx.arc(cx + 28, 91, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.font = `600 30px ${COND}`;
+  ctx.fillText('K', cx, 105);
+  // Wordmark.
+  ctx.font = `600 124px ${COND}`;
+  ctx.letterSpacing = '16px';
+  ctx.fillText('KALDERA', cx + 8, 222);
+  ctx.letterSpacing = '10px';
+  ctx.font = `500 25px ${SANS}`;
+  ctx.fillText('ESTATE RESERVE', cx + 5, 306);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - 120, 340);
+  ctx.lineTo(cx + 120, 340);
+  ctx.stroke();
+  ctx.letterSpacing = '0px';
+  ctx.font = `italic 36px ${SERIF}`;
+  ctx.fillText('The one you were looking for', cx, 388);
+  ctx.fillStyle = '#4a4a4a';
   ctx.letterSpacing = '4px';
-  ctx.fillText('THE ONE YOU WERE LOOKING FOR', w / 2, 222);
-  ctx.fillStyle = '#a7a7a7';
-  ctx.font = `500 13px ${SANS}`;
-  ctx.letterSpacing = '4px';
-  ctx.fillText('BOISE, IDAHO  ·  43.61° N  116.20° W', w / 2, 262);
+  ctx.font = `500 17px ${SANS}`;
+  ctx.fillText('BOISE, IDAHO  ·  43.61° N  116.20° W', cx + 2, 446);
+  ctx.fillText('No. 001 / 001  ·  750 ML', cx + 2, 478);
+  ctx.letterSpacing = '0px';
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   texture.minFilter = LinearMipmapLinearFilter;
   texture.magFilter = LinearFilter;
-  texture.anisotropy = 8;
+  texture.anisotropy = 16;
   return texture;
+}
+
+// Canvas text needs the faces loaded before it is drawn.
+export async function loadLabelFonts(): Promise<void> {
+  if (!document.fonts) return;
+  await Promise.all([
+    document.fonts.load("600 64px 'Barlow Condensed'"),
+    document.fonts.load("500 16px 'Barlow'"),
+    document.fonts.load("400 16px 'Barlow'"),
+    document.fonts.load("600 16px 'Barlow'")
+  ]).catch(() => undefined);
 }

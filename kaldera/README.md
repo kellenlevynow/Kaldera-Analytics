@@ -15,13 +15,21 @@ The copy sells marketing expertise, judgment, execution and connected systems, n
 
 ## The wine page (`/wine`)
 
-`wine.html` is a second entry: a scroll-driven search through a physics pile of wine bottles for wineries, vineyards, estates, wine bars, storage facilities, private collections and wine country tour operators. The animation is the pitch; the copy is one headline, two captions and one message at the floor.
+`wine.html` is a second entry: a scroll-driven search, straight down, through a deep pile of wine bottles, for wineries, vineyards, estates, wine bars, storage facilities, private collections and wine country tour operators. The animation is the pitch. The copy is a paced narrative about where the wine trade is going, one short moment at a time, and one message at the floor.
 
-- `src/wine.ts` wires the HUD, the captions and the lazy scene import. `src/wine/scene.ts` assembles the scene; `bottle.ts` builds the lathe shapes; `labels.ts` draws the label atlas (every estate on it is invented); `materials.ts` holds the cellar environment and the shared materials; `physics.ts` runs the pile.
-- Physics is Rapier (`@dimforge/rapier3d`). The WebAssembly binary ships as a static asset (about 1.1 MB gzipped, cached immutably); `src/wine/rapier.ts` fetches and binds it, and `vite.config.ts` aliases the package's wasm import to `src/wine/vendor/rapier-glue.ts`. The CSP in `public/_headers` carries `'wasm-unsafe-eval'` for it.
-- The pile: a well with a fixed bed of flat bottles on the floor, several hundred dynamic bottles (compound capsule colliders) settled over a few hundred steps before the canvas fades in, a kinematic probe that rides with the camera and shoves bottles aside, and a kinematic sphere that grows around the hero bottle for the reveal. The hero is the only monochrome bottle.
-- Camera: a slow spiral down through the pile, the screen rolling with the direction of travel, then a lift to eye level with the hero's label. Depth of field (BokehPass) and shadows run on the high tier only; medium and low tiers cut bottle count, pixel ratio and segments. Reduced motion drops the damping, the sway and the parallax.
-- Review flags: `?debug` keeps the frame monitor from changing tiers, `?tier=high|medium|low` forces a tier, `?instant` removes the scroll damping, `?count=N` (with `?debug`) overrides the bottle count, `?og` hides the HUD for a capture. `window.__kaldera.diagnostics()` reports draw calls, triangles, physics time and the active features.
+**The journey.** The page is 27 screens tall. The camera looks straight down the whole way. It starts with its probe resting on the pile, so the first scroll moves bottles; the descent is linear in scroll, so every step moves the same distance; near the floor it slows and stops over one bottle, lying label up, and leans in. The pile has four strata, each with its own glass, foil and labels: the shelf, the list, the cellar and the library. The hero is the only bottle with a white label.
+
+**The text.** Every line lives in `wine.html` as a `.moment` with `data-from` and `data-to` (fractions of the journey). Moments are fixed at the centre of the screen and fade with the camera's own progress, which trails the scroll position, so words and picture stay in step (`src/wine/moments.ts`). Edit the copy and the timings there and nowhere else. Voice: someone who knows the trade, not an agency pitching it. No service lists, no claims about clients or results.
+
+**How it is built.**
+
+- `src/wine.ts` wires the HUD, the moments and the lazy scene import. `src/wine/scene.ts` assembles the scene; `bottle.ts` builds the lathe shapes and colliders; `labels.ts` draws the label atlas (every estate on it is invented) and the hero label; `materials.ts` holds the reflection maps and shared materials; `physics.ts` runs the pile; `layout.ts` holds what the browser and the bake script share.
+- The pile is baked. `npm run bake:pile` pours 2,800 bottles into a well and settles them offline (about fifteen minutes; add `-- --bench` to drive a probe through the result and print timings) and writes `src/wine/pile.bin`, 82 KB. The page loads it and starts with no simulation at all. Rebake only if the well, the shapes or the count change.
+- Physics is Rapier (`@dimforge/rapier3d`; the bake uses the node-friendly `-compat` build, a dev dependency). The WebAssembly binary ships as a static asset (about 1.1 MB gzipped, cached immutably); `src/wine/rapier.ts` fetches and binds it, and `vite.config.ts` aliases the package's wasm import to `src/wine/vendor/rapier-glue.ts`. The CSP in `public/_headers` carries `'wasm-unsafe-eval'` for it.
+- Only a thin shell of bottles around the camera is simulated, about 180 at a time. A contact pile is a single island to the solver, so waking any of it would wake all of it. The rest follow an analytic field: a hole the shape of the camera's probe, with a nose reaching ahead, opens along the path and every far bottle slides radially out of it, exactly in step with scroll, then closes behind. Bottles inside the shell are live rigid bodies pushed by the probe; they collide with each other and with the far bottles, which have already made room, and are handed back to the field once left at rest. `physics.ts` has the detail.
+- Rendering draws only the bottles inside the camera's downward cone, a few hundred of the 2,900, into three instanced meshes per shape. Depth of field (BokehPass) and shadows run on the high tier only; lower tiers shorten the view, thicken the fog and cut segments and pixel ratio. Reduced motion drops the roll, the drift and the parallax.
+- The reveal: the nose of the field lengthens to open the floor, the lamp gives way to a narrow key light, the hero has its own reflection map (two side softboxes and an overhead strip, for the lines down the black glass), and a CSS pool of shade closes in around it.
+- Review flags: `?debug` keeps the frame monitor from changing tiers, `?tier=high|medium|low` forces a tier, `?instant` lets the camera chase scroll four times faster, `?og` hides the HUD and text for a capture. `window.__kaldera.diagnostics()` reports progress, visible and live bottle counts, draw calls, triangles and physics time.
 
 ## Email signature assets
 
@@ -69,7 +77,8 @@ public/fonts/              Barlow 400/500/600 and Barlow Condensed 600, latin wo
 public/favicon.svg, robots.txt, og.png
 src/main.ts                HUD wiring, reveals, scroll progress, lazy scene import
 wine.html, src/wine.ts     the wine page entry (see above)
-src/wine/                  scene, bottle, labels, materials, physics, rapier loader, hud, overlay
+src/wine/                  scene, bottle, labels, materials, physics, layout, rapier loader, hud, moments, pile.bin
+scripts/bake-pile.mjs      pours and settles the wine page's pile offline
 src/site.config.ts         domain, email, coordinates (placeholders flagged)
 src/styles/                tokens, base, hud, sections, fallback
 src/ui/                    hud, reveal (GSAP), motion (preferences)

@@ -32,8 +32,7 @@ export function initWineHud(options: Options): WineHud {
   const tele = {
     depth: query<HTMLElement>('[data-tele="depth"]'),
     bottles: query<HTMLElement>('[data-tele="bottles"]'),
-    hdg: query<HTMLElement>('[data-tele="hdg"]'),
-    status: query<HTMLElement>('[data-tele="status"]')
+    layer: query<HTMLElement>('[data-tele="layer"]')
   };
   const last: Record<string, string | number> = { progress: -1 };
   const write = (el: HTMLElement | null, key: string, text: string) => {
@@ -56,8 +55,7 @@ export function initWineHud(options: Options): WineHud {
     setTelemetry(t) {
       write(tele.depth, 'depth', `${Math.max(0, t.depth).toFixed(2)} m`);
       write(tele.bottles, 'bottles', String(t.bottles));
-      write(tele.hdg, 'hdg', `${String(Math.round(((t.hdg % 360) + 360) % 360)).padStart(3, '0')}°`);
-      write(tele.status, 'status', t.found ? 'Found' : 'Searching');
+      write(tele.layer, 'layer', t.layer);
     },
     setFound(isFound) {
       write(found, 'found', isFound ? '1 / 1' : '0 / 1');
