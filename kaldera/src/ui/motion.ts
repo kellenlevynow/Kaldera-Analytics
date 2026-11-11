@@ -1,72 +1,57 @@
-// Motion and quality preferences. Persisted, reflected on <html>, and
-// observable by the HUD and the scene.
+// Motion and quality are fixed configuration, not visitor settings: motion runs
+// in full and quality adapts automatically (src/scene/quality.ts picks the tier
+// from the device and the measured frame time). The operating system's
+// reduced-motion preference is still honoured as an accessibility setting.
 export type MotionMode = 'full' | 'reduced';
 export type QualityMode = 'auto' | 'low';
 
+export const MOTION: MotionMode = 'full';
+export const QUALITY: QualityMode = 'auto';
+
 export interface Store<T> {
   get(): T;
-  set(value: T): void;
   subscribe(fn: (value: T) => void): () => void;
 }
 
-function readStored<T extends string>(key: string, allowed: readonly T[]): T | null {
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw && (allowed as readonly string[]).includes(raw) ? (raw as T) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeStored(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // Storage can be unavailable in private modes. The preference still applies for this visit.
-  }
-}
-
-function createStore<T extends string>(key: string, allowed: readonly T[], fallback: () => T): Store<T> & { explicit: boolean; reset(value: T): void } {
-  const stored = readStored(key, allowed);
-  let value: T = stored ?? fallback();
+function createStore<T>(initial: T): Store<T> & { update(next: T): void } {
+  let value = initial;
   const listeners = new Set<(value: T) => void>();
-  const store = {
-    explicit: stored !== null,
+  return {
     get: () => value,
-    set(next: T) {
-      store.explicit = true;
-      writeStored(key, next);
+    update(next) {
       if (next === value) return;
       value = next;
       listeners.forEach((fn) => fn(value));
     },
-    // Used when the system preference changes and the visitor has not chosen explicitly.
-    reset(next: T) {
-      if (store.explicit || next === value) return;
-      value = next;
-      listeners.forEach((fn) => fn(value));
-    },
-    subscribe(fn: (value: T) => void) {
+    subscribe(fn) {
       listeners.add(fn);
       return () => listeners.delete(fn);
     }
   };
-  return store;
 }
 
 const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const motion = createStore<MotionMode>(reducedQuery.matches ? 'reduced' : MOTION);
 
-export const motionStore = createStore<MotionMode>('kaldera:motion', ['full', 'reduced'], () => (reducedQuery.matches ? 'reduced' : 'full'));
-export const qualityStore = createStore<QualityMode>('kaldera:quality', ['auto', 'low'], () => 'auto');
+export const motionStore: Store<MotionMode> = motion;
+export const qualityStore: Store<QualityMode> = createStore<QualityMode>(QUALITY);
 
 function applyMotion(mode: MotionMode): void {
   document.documentElement.dataset.motion = mode;
 }
 
-applyMotion(motionStore.get());
-motionStore.subscribe(applyMotion);
-reducedQuery.addEventListener('change', (event) => motionStore.reset(event.matches ? 'reduced' : 'full'));
+applyMotion(motion.get());
+motion.subscribe(applyMotion);
+reducedQuery.addEventListener('change', (event) => motion.update(event.matches ? 'reduced' : MOTION));
+
+// Preferences saved by an earlier version of the site are no longer read.
+try {
+  window.localStorage.removeItem('kaldera:motion');
+  window.localStorage.removeItem('kaldera:quality');
+} catch {
+  // Storage can be unavailable; nothing to clear then.
+}
 
 export function isReduced(): boolean {
-  return motionStore.get() === 'reduced';
+  return motion.get() === 'reduced';
 }

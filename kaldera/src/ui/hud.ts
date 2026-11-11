@@ -1,5 +1,3 @@
-import type { MotionMode, QualityMode, Store } from './motion';
-
 export interface Telemetry {
   alt: number; // kilometres above the terrain
   hdg: number; // degrees, 0 to 360
@@ -16,30 +14,11 @@ export interface Hud {
 }
 
 interface HudOptions {
-  motion: Store<MotionMode>;
-  quality: Store<QualityMode>;
   email: string;
 }
 
 function query<T extends Element>(selector: string, root: ParentNode = document): T | null {
   return root.querySelector<T>(selector);
-}
-
-export function bindToggle<T extends string>(attribute: string, store: Store<T>): void {
-  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(`[${attribute}]`));
-  const render = (value: T) => {
-    for (const button of buttons) {
-      button.setAttribute('aria-pressed', String(button.getAttribute(attribute) === value));
-    }
-  };
-  for (const button of buttons) {
-    button.addEventListener('click', () => {
-      const next = button.getAttribute(attribute) as T | null;
-      if (next) store.set(next);
-    });
-  }
-  render(store.get());
-  store.subscribe(render);
 }
 
 export function bindCopy(email: string): void {
@@ -89,8 +68,6 @@ export function bindCopy(email: string): void {
 }
 
 export function initHud(options: HudOptions): Hud {
-  bindToggle('data-motion-opt', options.motion);
-  bindToggle('data-quality-opt', options.quality);
   bindCopy(options.email);
 
 

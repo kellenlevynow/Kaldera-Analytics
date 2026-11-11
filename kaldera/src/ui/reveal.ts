@@ -11,9 +11,9 @@ export interface Reveals {
 const EASE = 'power4.out';
 
 function heroIntro(hero: HTMLElement, reduced: boolean): gsap.core.Timeline {
-  // Individual items, never .hud-right: a transform on it would make the fixed
-  // SYS panel position against it on small screens.
-  const hudItems = gsap.utils.toArray<HTMLElement>('.hud-top .wordmark, .hud-top .hud-status, .hud-top .sys-group, .hud-top .hud-cta, .rail');
+  // Individual items, never .hud-right or .nav: a transform on either would make
+  // the fixed navigation panel position against it on small screens.
+  const hudItems = gsap.utils.toArray<HTMLElement>('.hud-top .wordmark, .hud-top .hud-status, .hud-top .nav-link, .hud-top .nav-toggle, .hud-top .hud-cta, .rail');
   const bottom = gsap.utils.toArray<HTMLElement>('.hud-bottom > *');
   const lines = gsap.utils.toArray<HTMLElement>('.line-inner', hero);
   const dek = hero.querySelector<HTMLElement>('.dek');
@@ -104,7 +104,7 @@ export function initReveals(isReduced: () => boolean): Reveals {
   return {
     rebuild() {
       teardown();
-      gsap.set('.line-inner, .fade, .hud-top .wordmark, .hud-top .hud-status, .hud-top .sys-group, .hud-top .hud-cta, .hud-bottom > *, .rail', { clearProps: 'all' });
+      gsap.set('.line-inner, .fade, .hud-top .wordmark, .hud-top .hud-status, .hud-top .nav-link, .hud-top .nav-toggle, .hud-top .hud-cta, .hud-bottom > *, .rail', { clearProps: 'all' });
       build();
       ScrollTrigger.refresh();
     },
