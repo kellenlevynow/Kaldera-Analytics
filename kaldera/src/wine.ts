@@ -1,7 +1,6 @@
 import './styles/index.css';
 import './styles/wine.css';
 import { site } from './site.config';
-import { motionStore, qualityStore } from './ui/motion';
 import { initWineHud } from './wine/hud';
 import { initMoments } from './wine/moments';
 import type { WineSceneController } from './wine/types';
@@ -10,7 +9,9 @@ const html = document.documentElement;
 html.classList.add('js');
 if (new URLSearchParams(window.location.search).has('og')) html.classList.add('og');
 
-const hud = initWineHud({ motion: motionStore, quality: qualityStore, email: site.email });
+// Motion is fixed to the reduced behaviour and rendering to the low tier (data-motion in
+// wine.html, the tier in src/wine/scene.ts); the page offers no controls for either.
+const hud = initWineHud({ email: site.email });
 const moments = initMoments();
 
 // Scroll progress over the whole page. The descent is continuous, so progress
@@ -92,8 +93,6 @@ async function loadScene(): Promise<void> {
     const { createWineScene } = await import('./wine/scene');
     scene = await createWineScene({
       canvas,
-      motion: motionStore,
-      quality: qualityStore,
       initialProgress: progress,
       onOnline() {
         canvas.classList.add('is-online');

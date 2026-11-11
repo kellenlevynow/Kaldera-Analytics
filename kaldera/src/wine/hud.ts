@@ -1,5 +1,4 @@
-import type { MotionMode, QualityMode, Store } from '../ui/motion';
-import { bindCopy, bindToggle } from '../ui/hud';
+import { bindCopy } from '../ui/hud';
 import type { WineTelemetry } from './types';
 
 export interface WineHud {
@@ -11,8 +10,6 @@ export interface WineHud {
 }
 
 interface Options {
-  motion: Store<MotionMode>;
-  quality: Store<QualityMode>;
   email: string;
 }
 
@@ -21,8 +18,6 @@ function query<T extends Element>(selector: string): T | null {
 }
 
 export function initWineHud(options: Options): WineHud {
-  bindToggle('data-motion-opt', options.motion);
-  bindToggle('data-quality-opt', options.quality);
   bindCopy(options.email);
 
   const status = query<HTMLElement>('[data-scene-status]');

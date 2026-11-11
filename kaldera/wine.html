@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-motion="full" data-page="wine">
+<html lang="en" data-motion="reduced" data-page="wine">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -181,6 +181,7 @@
     <canvas id="scene" class="scene" aria-hidden="true"></canvas>
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
+    <div class="spot-close" aria-hidden="true"></div>
     <div class="scrim" aria-hidden="true"></div>
 
     <header class="hud hud-top">
@@ -193,19 +194,6 @@
         <span data-scene-status>Poster</span>
       </p>
       <div class="hud-right">
-        <div class="sys" role="group" aria-label="System settings">
-          <span class="sys-label" aria-hidden="true">Sys</span>
-          <div class="sys-group" role="group" aria-label="Motion">
-            <span class="sys-key" aria-hidden="true">Motion</span>
-            <button type="button" class="sys-opt" data-motion-opt="full" aria-pressed="true">Full</button>
-            <button type="button" class="sys-opt" data-motion-opt="reduced" aria-pressed="false">Reduced</button>
-          </div>
-          <div class="sys-group" role="group" aria-label="Quality" data-quality-group>
-            <span class="sys-key" aria-hidden="true">Quality</span>
-            <button type="button" class="sys-opt" data-quality-opt="auto" aria-pressed="true">Auto</button>
-            <button type="button" class="sys-opt" data-quality-opt="low" aria-pressed="false">Low</button>
-          </div>
-        </div>
         <a class="btn hud-cta" href="#found" data-to-end>Start a conversation</a>
       </div>
     </header>
@@ -217,75 +205,76 @@
         <section class="moment moment-hero" data-from="-1" data-to="0.03" data-scrim="0.55" aria-labelledby="hero-title">
           <p class="eyebrow"><span class="idx">[ 00 ]</span>Kaldera Analytics for the wine trade</p>
           <h1 class="display display-h1" id="hero-title">
-            <span>Somewhere</span>
-            <span>in here is</span>
-            <span>the one.</span>
+            <span>Somewhere in here</span>
+            <span>is a year of someone's work,</span>
+            <span>and the person it was meant for.</span>
           </h1>
-          <p class="moment-sub">Scroll to start digging.</p>
+          <p class="moment-sub">Several thousand bottles, and behind every one of them a place, a season and somebody's name. Scroll to begin the search.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.05" data-to="0.105">
-          <p class="moment-line">More good wine is being made than at any point in history.</p>
-          <p class="moment-sub">Almost none of it is easy to find.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.04" data-to="0.095">
+          <p class="moment-line">A wine is the most portable form a place has ever taken.</p>
+          <p class="moment-sub">A single bottle carries a hillside's aspect and the soil beneath it, the weather of one particular year, and a sequence of decisions, from the pruning in February to the morning the fruit came in, that no other house would have made in quite the same order. That is why the trade has long spoken of wine by the names of estates and growers, and why those names are worth protecting.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.125" data-to="0.18">
-          <p class="moment-line">The drinkers who bought by habit are buying less.</p>
-          <p class="moment-sub">The ones coming up behind them never formed the habit.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.112" data-to="0.184">
+          <p class="moment-line">No one can reproduce a slope, a season, or a family's way of working them.</p>
+          <p class="moment-sub">Beneath the mystique, terroir is a practical idea. The same variety grown on limestone at four hundred meters and on river gravel at sixty will ripen on different days and taste of the difference. Add a frost in the last week of April, a dry August, the decision to pick three days early, and a family's accumulated sense of when the cellar should intervene and when it should leave well alone, and the result belongs to one place and one house. That singularity is the most valuable thing an estate owns.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.2" data-to="0.255">
-          <p class="moment-line">They are not indifferent. They are curious.</p>
-          <p class="moment-sub">Fewer bottles, better ones, and a reason for each.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.201" data-to="0.261">
+          <p class="moment-line">Between the cellar door and the dinner table lies one of the most intricate markets in the world.</p>
+          <p class="moment-sub">Before a cork is pulled, a bottle may have passed through an importer, a distributor, a retailer or the keeper of a restaurant's list, and at each hand it was weighed against thousands of others of comparable quality. Being good is assumed at that level. Whether a wine is chosen depends on whether it is known, understood, and placed where the right person will come across it.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.275" data-to="0.33">
-          <p class="moment-line">So last year's sales stop predicting next year's.</p>
-          <p class="moment-sub">A club that grew on its own for twenty years now has to be earned every quarter.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.278" data-to="0.338">
+          <p class="moment-line">The people now buying serious wine open fewer bottles and expect more of each.</p>
+          <p class="moment-sub">In the mature markets people drink less wine than their parents did, and the bottles they do open are chosen deliberately: for an occasion, with questions about where the wine came from and who farmed it, and with little patience for a label that cannot answer them. A producer whose work can stand that kind of attention has rarely had a better audience.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.35" data-to="0.405">
-          <p class="moment-line">An exceptional bottle is the price of entry.</p>
-          <p class="moment-sub">It is not the reason anyone finds you.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.355" data-to="0.415">
+          <p class="moment-line">The economics of an estate have moved closer to the people who drink its wine.</p>
+          <p class="moment-sub">Wholesale has consolidated into a few very large houses whose books run to thousands of labels, and a small producer's place in one of them is never quite secure. The tasting room, the mailing list and the club, once a comfortable supplement to wholesale, have become the ground on which many estates now stand. Those relationships compound when they are tended, and erode quietly when they are not.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.425" data-to="0.48">
-          <p class="moment-line">What travels is what cannot be copied.</p>
-          <p class="moment-sub">The slope. The family. The frost in the third week of April. The hands at the sorting table.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.432" data-to="0.495">
+          <p class="moment-line">Making a wine of consequence and establishing its reputation are different crafts.</p>
+          <p class="moment-sub">The first is practiced in the vineyard and the cellar over years, and judged honestly only in the glass. The second takes place in the trade's memory: among the sommeliers who list a wine because they trust the house, the importers who defend an allocation, the critics who return to a vintage, and the collectors who follow a name from one release to the next. Reputation is formed in that company, slowly, and it favors producers who understand how it is made.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.5" data-to="0.555">
-          <p class="moment-line">Not everyone is looking for the same bottle.</p>
-          <p class="moment-sub">The collector, the weeknight cook, the couple planning a first trip to the valley. Each is searching for something specific.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.512" data-to="0.579">
+          <p class="moment-line">The same bottle is sought, for different reasons, by people who will never meet.</p>
+          <p class="moment-sub">A collector follows a house across vintages and wants certainty of provenance and a place on the allocation. A sommelier building a list wants a wine that explains itself in two sentences at the table and holds its shape by the glass. A couple on their first drive through the valley want a welcome, a story they can carry home, and a reason to return. An estate that understands each of these conversations can hold all of them at once without diluting any.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.575" data-to="0.63">
-          <p class="moment-line">Demand is built long before the purchase.</p>
-          <p class="moment-sub">In the first pour at a tasting bar. In a story worth retelling. In an afternoon among the rows.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.596" data-to="0.656">
+          <p class="moment-line">A wine becomes sought after long before anyone asks for it by name.</p>
+          <p class="moment-sub">Reputation gathers from several directions at once: a place on a serious list, an importer who shows the wine with conviction, a review that lands in the right season, a tasting that turns a curious visitor into a member, a letter that reads as though it were written for one person. No single one of them carries a house. Together, sustained over years, they turn a label into a name that is recognized, then considered, then asked for.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.65" data-to="0.705">
-          <p class="moment-line">The first bottle is an introduction.</p>
-          <p class="moment-sub">The relationship is the release they wait for, the letter they open first, the table they bring friends to.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.673" data-to="0.733">
+          <p class="moment-line">In fine wine, the second purchase has always mattered more than the first.</p>
+          <p class="moment-sub">An allocation renewed each year, a club that still feels like a privilege rather than a subscription, a guest who comes back with friends and introduces the wine for you: these are the forms loyalty takes in this trade, and they are its most durable source of revenue. They are also easily lost. They depend on being remembered, on being treated as a guest rather than a record, and on each release living up to the last.</p>
         </section>
 
-        <section class="moment" data-scrim="0.82" data-from="0.725" data-to="0.78">
-          <p class="moment-line">Tasting room, distributor, wine list, website, club.</p>
-          <p class="moment-sub">To the person holding the glass it is one winery. It should feel like one.</p>
+        <section class="moment" data-scrim="0.82" data-from="0.75" data-to="0.812">
+          <p class="moment-line">A house has one reputation, however many hands its wine passes through.</p>
+          <p class="moment-sub">The bottle a distributor presents in a city the winemaker will never visit, the glass poured at a restaurant three states away, the website, the welcome at the gate, and the note that follows a shipment are all read, in the end, by one person as one character. When they agree with one another, each strengthens the rest. When they drift apart, the drift is felt long before anyone can name it.</p>
         </section>
 
         <!-- From here the camera slows and the pile opens. The bottle is left alone on screen before the message. -->
 
         <section class="moment moment-message" data-from="0.915" data-to="0.955" data-scrim="1" aria-labelledby="t-message">
           <h2 class="display moment-display" id="t-message">
-            <span>Find exactly what you're looking for.</span>
-            <span>Build what doesn't exist yet.</span>
+            <span>Being found by the right person</span>
+            <span>has always been partly luck.</span>
+            <span>Our work is the other part.</span>
           </h2>
         </section>
 
         <section class="moment moment-close" id="found" data-from="0.968" data-to="2" data-scrim="1" aria-labelledby="t-close">
           <p class="eyebrow" id="t-close"><span class="idx">[ 01 ]</span>Kaldera Analytics</p>
-          <p class="moment-sub moment-close-text">We work with wineries, vineyards and estates, wine bars, storage facilities, private collections and the people who guide others through wine country. We help make the bottle, build the demand for it, and make sure the right person finds it.</p>
+          <p class="moment-sub moment-close-text">Kaldera is a marketing and revenue practice in Boise, Idaho, working with wine estates and the trade around them: growers and négociants, wine bars and merchants, storage facilities and private cellars, and the people who guide visitors through wine country. We work at the point where the vineyard's labor meets the market's, from how a house presents itself and to whom, through distribution and hospitality, to the direct relationships that sustain it. We take on a few clients at a time, and we expect to know their wines as well as their ledgers.</p>
           <div class="channel">
             <a class="channel-email link" href="mailto:%SITE_EMAIL%" data-site-email>%SITE_EMAIL%</a>
             <button type="button" class="btn btn-copy" data-copy-email>Copy</button>

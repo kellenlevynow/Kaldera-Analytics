@@ -1,7 +1,11 @@
 // The search: a scroll-driven descent, straight down, through a deep physics
 // pile of bottles, ending on one. Renderer, lights, instanced bottles culled to
-// the camera's view, the camera path, the probe that displaces the pile, depth
-// of field on capable machines, quality tiers and reduced-motion behaviour.
+// the camera's view, the camera path, the probe that displaces the pile, and
+// the physics clock, which runs on scroll rather than on the wall.
+//
+// Motion is fixed to the reduced behaviour (the camera follows scroll without
+// damping, roll, drift or parallax) and rendering to the low tier. ?tier= still
+// forces another tier for inspection.
 import gsap from 'gsap';
 import {
   ACESFilmicToneMapping,
@@ -32,7 +36,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { QualityTier } from '../scene/types';
-import { FrameMonitor, detectTier } from '../scene/quality';
+import { FrameMonitor } from '../scene/quality';
 import { SHAPES, SHAPE_NAMES, buildBottleGeometry, type BottleGeometry } from './bottle';
 import { STRATA, buildHeroLabel, buildLabelAtlas, loadLabelFonts, tileRect } from './labels';
 import { HERO_QUAT, PROBE_DROP, PROBE_HALF, PROBE_RADIUS, flatLayer, heroPosition, mulberry, parsePile } from './layout';
@@ -78,7 +82,17 @@ const PUSH_IN = 0.05;
 // Fastest the camera will chase the scroll position, in progress per second.
 // The probe is a physical thing; it may not teleport through the pile.
 const CHASE = 0.11;
-const CHASE_MAX = 0.4;
+const CHASE_MAX = 0.3;
+// The physics clock runs on scroll. It advances with the probe's travel, at the
+// pace of a hand moving through bottles (DIG_SPEED, metres per second of
+// physics time), plus a fraction of real time so that what has been disturbed
+// can settle. Bottles then meet the probe at the same speed whether the visitor
+// scrolls slowly or fast; fast scrolling only plays the same motion sooner.
+const DIG_SPEED = 0.3;
+const SETTLE_RATE = 0.2;
+// Longest physics step, and the most physics time one frame may carry.
+const STEP_MAX = 1 / 40;
+const VIRTUAL_MAX = 3 * STEP_MAX;
 
 const smoothstep = (t: number) => {
   const x = Math.min(1, Math.max(0, t));
@@ -132,7 +146,7 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   const params = new URLSearchParams(window.location.search);
   // ?tier=high|medium|low forces a tier for inspection; ?debug keeps the frame monitor from changing it.
   const forced = params.get('tier');
-  let tier: QualityTier = forced === 'high' || forced === 'medium' || forced === 'low' ? forced : options.quality.get() === 'low' ? 'low' : detectTier();
+  let tier: QualityTier = forced === 'high' || forced === 'medium' || forced === 'low' ? forced : 'low';
   const config = wineConfig(tier, deviceDpr);
   let dpr = config.dpr;
   let shadows = config.shadows;
@@ -160,12 +174,14 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
 
   const camera = new PerspectiveCamera(46, 1, 0.04, 12);
 
-  // Lights: a faint ambient, a warm lamp that travels with the camera, and a
-  // cool key that comes up over the hero at the reveal.
+  // Lights: a faint ambient, a cool key over the camera that lights a pool at
+  // the centre of the frame and falls away toward its edges, and a warm lamp
+  // off to one side that draws the long highlights down the glass. The key
+  // narrows over the hero at the reveal and the lamp gives way to it.
   scene.add(new HemisphereLight(0x5c6275, 0x1a100a, 0.06));
-  const lamp = new PointLight(0xffe2c8, 2.2, 6, 2);
+  const lamp = new PointLight(0xffe2c8, 1.1, 6, 2);
   scene.add(lamp);
-  const key = new SpotLight(0xf3f6ff, 0, 4, 0.33, 1, 1.6);
+  const key = new SpotLight(0xf3f6ff, 1.5, 4, 0.68, 1, 1.6);
   key.castShadow = shadows;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.bias = -0.0005;
@@ -216,13 +232,18 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   const look = new Float32Array(total * 13); // glass rgb, foil rgb, tint rgb, tile xyzw
   {
     const rnd = mulberry(1979);
+    // The palette is held back a little: colour toward its own luminance.
+    const quiet = (c: Color, keep: number) => {
+      const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+      return new Color(l + (c.r - l) * keep, l + (c.g - l) * keep, l + (c.b - l) * keep);
+    };
     const bounds = [0.74, 0.5, 0.26]; // fractions of the pile's height where the strata change
     for (let i = 0; i < total; i++) {
       const y = i < bodyCount ? baked.poses[i * 7 + 1]! : 0;
       const f = y / baked.pileTop + (rnd() - 0.5) * 0.07;
       const stratum = f > bounds[0]! ? 0 : f > bounds[1]! ? 1 : f > bounds[2]! ? 2 : 3;
-      const glass = pickWeighted(GLASS_STRATA[stratum]!, rnd());
-      const foil = pickWeighted(FOIL_STRATA[stratum]!, rnd());
+      const glass = quiet(pickWeighted(GLASS_STRATA[stratum]!, rnd()), 0.86);
+      const foil = quiet(pickWeighted(FOIL_STRATA[stratum]!, rnd()), 0.84);
       const tint = LABEL_TINT[stratum]!;
       const span = STRATA[stratum]!;
       const tile = tileRect(span.start + Math.floor(rnd() * span.count));
@@ -310,21 +331,17 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   let progress = Math.min(1, Math.max(0, options.initialProgress ?? 0));
   // A page reloaded part-way down starts there: the far field opens around the probe wherever it is put.
   let current = progress;
-  let reduced = options.motion.get() === 'reduced';
   let staticMode = false;
   let online = false;
   let ticking = false;
-  let time = 0;
   let frameCount = 0;
   let physicsMs = 0;
   let visible = 0;
   let aspect = 1;
   const monitor = new FrameMonitor(90);
-  const fine = window.matchMedia('(pointer: fine)');
   const debug = params.has('debug');
   // ?instant lets the camera chase the scroll position four times as fast, for captures.
   const instant = params.has('instant');
-  const parallax = { x: 0, y: 0, tx: 0, ty: 0 };
 
   const size = () => {
     const w = canvas.clientWidth || window.innerWidth;
@@ -338,9 +355,9 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
 
   // Camera path. Always straight down. The descent is linear in scroll, so
   // every scroll step moves the same distance through the pile; a slow weave
-  // and roll keep it from feeling like a lift shaft. Near the floor the camera
-  // slows, straightens and stops over the hero, then leans in a little.
-  const pose = { x: 0, y: 0, z: 0, roll: 0, fov: 46, reveal: 0 };
+  // keeps it from feeling like a lift shaft. Near the floor the camera slows,
+  // stops over the hero, then leans in a little.
+  const pose = { x: 0, y: 0, z: 0, fov: 46, reveal: 0 };
   const weave = (p: number) => 1 - smoothstep((p - 0.64) / 0.17);
   const poseAt = (p: number, yTop: number) => {
     const portrait = aspect < 1;
@@ -357,7 +374,6 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
     pose.x = a * Math.sin(Math.PI * 2 * 2.3 * p + 0.5);
     pose.z = a * Math.cos(Math.PI * 2 * 1.6 * p + 1.1);
     pose.y = yTop - depth;
-    pose.roll = reduced ? 0 : k * (0.45 * Math.sin(Math.PI * 2 * 1.15 * p) + 0.2 * Math.sin(Math.PI * 2 * 2.9 * p + 1));
     pose.reveal = smoothstep((p - 0.8) / (P_FLOOR - 0.8));
     pose.fov = lerp(portrait ? 58 : 46, 50, pose.reveal);
   };
@@ -432,45 +448,56 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
 
   const lampWarm = new Color(0xffe2c8);
   const lampDeep = new Color(0xffc890);
-  const applyCamera = (p: number, dt: number) => {
+  const applyCamera = (p: number) => {
     poseAt(p, yTop);
-    let x = pose.x;
-    let y = pose.y;
-    let z = pose.z;
-    if (!reduced && !staticMode) {
-      // A breath of drift, and the pointer nudges the eye sideways. The view stays vertical.
-      const still = 1 - pose.reveal * 0.7;
-      parallax.x += (parallax.tx - parallax.x) * (1 - Math.exp(-dt * 3));
-      parallax.y += (parallax.ty - parallax.y) * (1 - Math.exp(-dt * 3));
-      x += (Math.sin(time * 0.5) * 0.006 + parallax.x * 0.018) * still;
-      y += Math.sin(time * 0.37) * 0.004 * still;
-      z += (Math.cos(time * 0.43) * 0.006 + parallax.y * 0.018) * still;
-    }
+    const { x, y, z } = pose;
     camera.position.set(x, y, z);
-    camera.up.set(Math.sin(pose.roll), 0, -Math.cos(pose.roll));
+    camera.up.set(0, 0, -1);
     camera.lookAt(x, y - 1, z);
     if (Math.abs(camera.fov - pose.fov) > 0.01) {
       camera.fov = pose.fov;
       camera.updateProjectionMatrix();
     }
-    pile.update(pose.x, pose.y, pose.z, pose.reveal);
-    pile.setProbe(pose.x, pose.y, pose.z);
 
-    // Light: warmer and lower with depth, then the lamp gives way to the key.
+    // Light: the lamp warms and dims with depth, then gives way to the key,
+    // which narrows from a pool the width of the frame to one around the bottle.
     const depth = Math.min(1, Math.max(0, (yTop - pose.y) / (yTop - HERO_EYE)));
     lamp.color.copy(lampWarm).lerp(lampDeep, depth);
-    lamp.intensity = lerp(lerp(2.3, 1.7, depth), 0.2, pose.reveal);
+    lamp.intensity = lerp(lerp(1.1, 0.85, depth), 0.2, pose.reveal);
     // Up and to the left of the frame, so highlights run the length of the glass.
-    lamp.position.set(x - 0.42 * Math.cos(pose.roll) + 0.32 * Math.sin(pose.roll), y, z - 0.42 * Math.sin(pose.roll) - 0.32 * Math.cos(pose.roll));
-    key.intensity = 2.1 * pose.reveal;
-    // Off until the reveal, so its shadow pass costs nothing on the way down.
-    key.visible = pose.reveal > 0.001;
+    lamp.position.set(x - 0.42, y, z - 0.32);
+    key.intensity = lerp(1.5, 2.1, pose.reveal);
+    key.angle = lerp(0.68, 0.33, pose.reveal);
     key.position.set(x - 0.05, y + 0.1, z - 0.03);
     if (bokeh) {
       const uniforms = bokeh.uniforms as Record<string, { value: number }>;
       uniforms.focus!.value = lerp(0.66, pose.y - heroTop, pose.reveal);
       uniforms.aperture!.value = lerp(0.02, 0.05, pose.reveal);
     }
+  };
+
+  // The probe follows the camera through the pile in physics time. A frame's
+  // travel is split into steps short enough that nothing tunnels, the far field
+  // and the probe advancing together through each.
+  const prev = { x: 0, y: 0, z: 0, reveal: 0 };
+  const advancePile = (dt: number) => {
+    const travel = Math.hypot(pose.x - prev.x, pose.y - prev.y, pose.z - prev.z);
+    const virtual = Math.min(VIRTUAL_MAX, dt * SETTLE_RATE + travel / DIG_SPEED);
+    const steps = Math.max(1, Math.min(3, Math.ceil(virtual / STEP_MAX)));
+    for (let k = 1; k <= steps; k++) {
+      const t = k / steps;
+      const x = prev.x + (pose.x - prev.x) * t;
+      const y = prev.y + (pose.y - prev.y) * t;
+      const z = prev.z + (pose.z - prev.z) * t;
+      pile.update(x, y, z, prev.reveal + (pose.reveal - prev.reveal) * t);
+      pile.setProbe(x, y, z);
+      pile.step(virtual / steps);
+    }
+    pile.refresh();
+    prev.x = pose.x;
+    prev.y = pose.y;
+    prev.z = pose.z;
+    prev.reveal = pose.reveal;
   };
 
   const render = () => {
@@ -491,19 +518,15 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   };
 
   const frame = (dt: number) => {
-    time += dt;
     frameCount++;
-    // The camera chases the scroll position, damped, and never faster than the
-    // pile can be pushed aside. A jump (a reload mid-page, a link to the end)
-    // becomes a dive.
+    // The camera follows the scroll position, never faster than the pile can
+    // be pushed aside. A jump (a reload mid-page, a link to the end) becomes a dive.
     const gap = progress - current;
-    const want = reduced || staticMode ? gap : gap * (1 - Math.exp(-dt * 4.5));
     const cap = Math.min(CHASE_MAX, CHASE + 0.9 * Math.max(0, Math.abs(gap) - 0.06)) * dt * (instant ? 4 : 1);
-    current += Math.min(cap, Math.max(-cap, want));
-    applyCamera(current, dt);
+    current += Math.min(cap, Math.max(-cap, gap));
+    applyCamera(current);
     const t0 = performance.now();
-    pile.step(Math.min(1 / 30, Math.max(1 / 120, dt)));
-    pile.refresh();
+    advancePile(dt);
     physicsMs += (performance.now() - t0 - physicsMs) * 0.1;
     drawPile();
     render();
@@ -580,21 +603,8 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
     if (document.hidden) stopTicker();
     else startTicker();
   };
-  const onPointer = (event: PointerEvent) => {
-    if (reduced || staticMode || !fine.matches) return;
-    parallax.tx = (event.clientX / window.innerWidth) * 2 - 1;
-    parallax.ty = (event.clientY / window.innerHeight) * 2 - 1;
-  };
   window.addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVisibility);
-  window.addEventListener('pointermove', onPointer, { passive: true });
-  const unsubMotion = options.motion.subscribe((mode) => {
-    reduced = mode === 'reduced';
-    if (reduced) parallax.tx = parallax.ty = parallax.x = parallax.y = 0;
-  });
-  const unsubQuality = options.quality.subscribe((mode) => {
-    if (mode === 'low') lowerQuality(true);
-  });
 
   size();
   options.onTier(tier, staticMode);
@@ -602,7 +612,12 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
   // First frame: the probe is placed, not moved, so nothing is flung.
   poseAt(current, yTop);
   pile.placeProbe(pose.x, pose.y, pose.z);
-  applyCamera(current, 1 / 60);
+  prev.x = pose.x;
+  prev.y = pose.y;
+  prev.z = pose.z;
+  prev.reveal = pose.reveal;
+  applyCamera(current);
+  pile.update(pose.x, pose.y, pose.z, pose.reveal);
   drawPile();
   render();
   online = true;
@@ -643,9 +658,6 @@ export async function createWineScene(options: WineSceneOptions): Promise<WineSc
       stopTicker();
       window.removeEventListener('resize', onResize);
       document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('pointermove', onPointer);
-      unsubMotion();
-      unsubQuality();
       dropComposer();
       pile.dispose();
       for (const set of sets) {

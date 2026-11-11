@@ -1,4 +1,3 @@
-import type { MotionMode, QualityMode, Store } from '../ui/motion';
 import type { QualityTier } from '../scene/types';
 
 export interface WineTelemetry {
@@ -10,8 +9,6 @@ export interface WineTelemetry {
 
 export interface WineSceneOptions {
   canvas: HTMLCanvasElement;
-  motion: Store<MotionMode>;
-  quality: Store<QualityMode>;
   onOnline(): void;
   // The camera's own progress through the journey, each frame. It trails the scroll position.
   onProgress(progress: number): void;

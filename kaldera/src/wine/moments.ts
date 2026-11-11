@@ -27,7 +27,7 @@ export function initMoments(): Moments {
     shift: 0
   }));
   const scrim = document.querySelector<HTMLElement>('.scrim');
-  const spot = document.querySelector<HTMLElement>('.spot');
+  const spot = document.querySelector<HTMLElement>('.spot-close');
   let scrimShown = -1;
   let spotShown = -1;
 
@@ -58,7 +58,7 @@ export function initMoments(): Moments {
         scrimShown = rounded;
         scrim.style.opacity = String(rounded);
       }
-      // The pool of light closes in as the camera settles over the bottle.
+      // The pool of light draws in as the camera settles over the bottle.
       const t = Math.min(1, Math.max(0, (progress - 0.8) / 0.06));
       const pool = Math.round(t * t * (3 - 2 * t) * 100) / 100;
       if (spot && pool !== spotShown) {
