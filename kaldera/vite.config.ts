@@ -31,7 +31,6 @@ function inlineCss(): Plugin {
     apply: 'build',
     generateBundle(_options, bundle) {
       const pages = Object.values(bundle).filter((item) => item.type === 'asset' && item.fileName.endsWith('.html'));
-      const scripts = Object.values(bundle).filter((item) => item.type === 'chunk');
       for (const [name, item] of Object.entries(bundle)) {
         if (item.type !== 'asset' || !name.endsWith('.css')) continue;
         const css = typeof item.source === 'string' ? item.source : new TextDecoder().decode(item.source);
@@ -42,11 +41,7 @@ function inlineCss(): Plugin {
           html.source = html.source.replace(tag, `<style>${css}</style>`);
           used = true;
         }
-        // A stylesheet shared by both pages can also be listed as a dependency of a
-        // dynamic import (the scene chunks). Keep the file whenever a script names it,
-        // or that import fails to preload it.
-        const referenced = scripts.some((chunk) => chunk.type === 'chunk' && chunk.code.includes(name));
-        if (used && !referenced) delete bundle[name];
+        if (used) delete bundle[name];
       }
     }
   };
@@ -73,6 +68,10 @@ export default defineConfig({
   build: {
     target: 'es2020',
     cssTarget: 'chrome90',
+    // One stylesheet for the whole site, inlined into each page below. Split CSS
+    // would make the shared chunk list a stylesheet as a preload dependency that
+    // the inliner has already removed from disk.
+    cssCodeSplit: false,
     sourcemap: false,
     assetsInlineLimit: 0,
     modulePreload: { polyfill: false },
